@@ -82,6 +82,7 @@ dependencies {
 
     compile ihmc.getProjectDependency(":IHMCHumanoidBehaviors")
     compile ihmc.getProjectDependency(":Vicon")
+    compile ihmc.getProjectDependency(":Valkyrie")
     compile ihmc.getProjectDependency(":CommonWalkingControlModules")
     compile ihmc.getProjectDependency(":IHMCAvatarInterfaces")
     compile ihmc.getProjectDependency(":IHMCJMonkeyEngineToolkit")
