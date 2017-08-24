@@ -138,7 +138,7 @@ public class AtlasAutomatedDiagnosticController extends IHMCWholeRobotControlJav
        * Create registries
        */
 
-      AtlasSensorInformation sensorInformation = robotModel.getSensorInformation(); // method does not exist
+      AtlasSensorInformation sensorInformation = robotModel.getAtlasSensorInformation(); // method does not exist
 
       /*
        * Create network servers/clients
