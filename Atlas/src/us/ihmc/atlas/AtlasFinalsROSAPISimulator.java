@@ -56,7 +56,9 @@ public class AtlasFinalsROSAPISimulator extends ROSAPISimulator
       List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> subscribers = new ArrayList<>();
       MessageFactory messageFactory = NodeConfiguration.newPrivate().getTopicMessageFactory();
 
-      if(robotVersion.getHandModel().isHandSimulated())
+      // null returned for case with no Robotiq hands. need to change model version.
+//      if(robotVersion.getHandModel().isHandSimulated())
+    	if(false)
       {
          HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/FingerStateRosMessage");
          RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());

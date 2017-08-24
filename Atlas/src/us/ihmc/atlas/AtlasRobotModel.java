@@ -254,6 +254,12 @@ public class AtlasRobotModel implements DRCRobotModel, SDFDescriptionMutator
    {
       return sensorInformation;
    }
+   
+   
+   public AtlasSensorInformation getAtlasSensorInformation()
+   {
+      return sensorInformation;
+   }
 
    @Override
    public FullHumanoidRobotModel createFullRobotModel()

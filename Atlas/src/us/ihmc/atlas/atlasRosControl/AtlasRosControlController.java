@@ -85,15 +85,17 @@ public class AtlasRosControlController extends IHMCWholeRobotControlJavaBridge
    public static final boolean USE_YOVARIABLE_DESIREDS = true;
    public static final boolean USE_USB_MICROSTRAIN_IMUS = false;
    public static final boolean USE_SWITCHABLE_FILTER_HOLDER_FOR_NON_USB_IMUS = false;
-   public static final String[] readIMUs = USE_USB_MICROSTRAIN_IMUS ? new String[0] : new String[AtlasSensorInformation.imuSensorsToUse.length];
-   // method does not exist
+   public static final String[] readIMUs = USE_USB_MICROSTRAIN_IMUS ? new String[0] : new String[AtlasSensorInformation.imuSensorsToUseInStateEstimator.length];
+   
+   ///TODO: imu change made here.
    static
    {
       if (!USE_USB_MICROSTRAIN_IMUS)
       {
-         for (int i = 0; i < AtlasSensorInformation.imuSensorsToUse.length; i++)
+         for (int i = 0; i < AtlasSensorInformation.imuSensorsToUseInStateEstimator.length; i++)
          {
-            readIMUs[i] = AtlasSensorInformation.imuSensorsToUse[i].replace("pelvis_", "").replace("torso_", "");
+        	 // might not need to replace / or imu name change might be needed
+        	 readIMUs[i] = AtlasSensorInformation.imuSensorsToUseInStateEstimator[i].replace("pelvis_", "").replace("torso_", "");
          }
       }
    }
@@ -230,7 +232,7 @@ public class AtlasRosControlController extends IHMCWholeRobotControlJavaBridge
          robotModel = new AtlasRobotModel(AtlasRobotVersion.ATLAS_UNPLUGGED_V5_DUAL_ROBOTIQ,RobotTarget.REAL_ROBOT, true);
       }
 
-      AtlasSensorInformation sensorInformation = robotModel.getSensorInformation(); // dont know what's wrong
+      AtlasSensorInformation sensorInformation = robotModel.getAtlasSensorInformation(); // dont know what's wrong
 
       /*
        * Create network servers/clients
