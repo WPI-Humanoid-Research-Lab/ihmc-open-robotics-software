@@ -22,14 +22,14 @@ testSuites {
 }
 
 mainDependencies {
-   compile group: 'us.ihmc', name: 'euclid-core', version: '0.4.13'
+   compile group: 'us.ihmc', name: 'euclid', version: '0.7.4'
    compile group: 'us.ihmc', name: 'ihmc-yovariables', version: '0.2.4'
    compile "org.ejml:core:0.30"
    compile "org.ejml:dense64:0.30"
    compile group: "us.ihmc", name: "ihmc-robotics-toolkit", version: groupDependencyVersion
    compile group: "us.ihmc", name: "ihmc-graphics-description", version: groupDependencyVersion
    compile group: "us.ihmc", name: "ihmc-convex-optimization-adapter", version: groupDependencyVersion
-   compile group: "us.ihmc", name: "ihmc-path-planning", version: groupDependencyVersion
+   compile group: "us.ihmc", name: "ihmc-path-planning", version: 'val-develop'
 }
 
 testDependencies {
