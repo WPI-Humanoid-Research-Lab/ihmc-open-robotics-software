@@ -154,6 +154,7 @@ public class HumanoidReferenceFrames implements CommonHumanoidReferenceFrames
       addDefaultIDToReferenceFrame(CommonReferenceFrameIds.CENTER_OF_MASS_FRAME, getCenterOfMassFrame());
       addDefaultIDToReferenceFrame(CommonReferenceFrameIds.LEFT_SOLE_FRAME, getSoleFrame(RobotSide.LEFT));
       addDefaultIDToReferenceFrame(CommonReferenceFrameIds.RIGHT_SOLE_FRAME, getSoleFrame(RobotSide.RIGHT));
+      addDefaultIDToReferenceFrame(CommonReferenceFrameIds.WORLD_FRAME, worldFrame);
       RigidBody chest = fullRobotModel.getChest();
       if (chest != null)
       {
