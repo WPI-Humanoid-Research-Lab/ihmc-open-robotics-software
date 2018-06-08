@@ -20,7 +20,7 @@ import us.ihmc.ihmcPerception.vision.HSVValue;
 
 public class OpenCVTools
 {
-   public static final String OPEN_CV_LIBRARY_NAME = "opencv_java310";
+   public static final String OPEN_CV_LIBRARY_NAME = "opencv_java320";
    
    public static Mat convertBufferedImageToMat(BufferedImage image)
    {
