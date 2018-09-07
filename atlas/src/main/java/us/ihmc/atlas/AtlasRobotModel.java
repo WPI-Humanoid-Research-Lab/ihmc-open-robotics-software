@@ -97,7 +97,8 @@ public class AtlasRobotModel implements DRCRobotModel, SDFDescriptionMutator
    private static final double ATLAS_ONBOARD_SAMPLINGFREQ = 1000.0;
    public static final double ATLAS_ONBOARD_DT = 1.0 / ATLAS_ONBOARD_SAMPLINGFREQ;
 
-   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = false;
+//   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = false; // IHMC robot is possibly running without batterymass
+   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = true;
 
    private final JaxbSDFLoader loader;
 
@@ -483,7 +484,8 @@ public class AtlasRobotModel implements DRCRobotModel, SDFDescriptionMutator
             if (BATTERY_MASS_SIMULATOR_IN_ROBOT)
             {
                modifyLinkInertialPose(linkHolder, "-0.043 0.00229456 0.316809 0 -0 0");
-               modifyLinkMass(linkHolder, 84.609);
+//               modifyLinkMass(linkHolder, 84.609);
+//               modifyLinkMass(linkHolder, 63.73); -- this is the value in urdf. why is it higher here?
             }
             else
             {

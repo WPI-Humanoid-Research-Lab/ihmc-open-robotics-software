@@ -440,16 +440,25 @@ void InteractMapper::getBoundedMapCallback( const visualization_msgs::Interactiv
 	tfListener.waitForTransform(mapFrame, baseFrame, stamp, ros::Duration(2));
 	tfListener.lookupTransform(mapFrame, baseFrame, stamp, stampedTr);
 	
-	Eigen::Affine3d eigenTr;
-	tf::transformTFToEigen(stampedTr, eigenTr);
+//	Eigen::Affine3d eigenTr;
+//	tf::transformTFToEigen(stampedTr, eigenTr);
 
-	srv.request.mapCenter.orientation.x = eigenTr.rotation().x();
-	srv.request.mapCenter.orientation.z = eigenTr.rotation().y();
-	srv.request.mapCenter.orientation.y = eigenTr.rotation().z();
-	srv.request.mapCenter.orientation.w = eigenTr.rotation().w();
-	srv.request.mapCenter.position.x = eigenTr.translation().x();
-	srv.request.mapCenter.position.y = eigenTr.translation().y();
-	srv.request.mapCenter.position.z = eigenTr.translation().z();
+//    srv.request.mapCenter.orientation.x = eigenTr.rotation().x();
+//	srv.request.mapCenter.orientation.z = eigenTr.rotation().y();
+//	srv.request.mapCenter.orientation.y = eigenTr.rotation().z();
+//	srv.request.mapCenter.orientation.w = eigenTr.rotation().w();
+//	srv.request.mapCenter.position.x = eigenTr.translation().x();
+//	srv.request.mapCenter.position.y = eigenTr.translation().y();
+//	srv.request.mapCenter.position.z = eigenTr.translation().z();
+
+    srv.request.mapCenter.orientation.x = stampedTr.getRotation().x();
+    srv.request.mapCenter.orientation.z = stampedTr.getRotation().y(); // why ?
+    srv.request.mapCenter.orientation.y = stampedTr.getRotation().z();
+    srv.request.mapCenter.orientation.w = stampedTr.getRotation().w();
+    srv.request.mapCenter.position.x = stampedTr.getOrigin().x();
+    srv.request.mapCenter.position.y = stampedTr.getOrigin().y();
+    srv.request.mapCenter.position.z = stampedTr.getOrigin().z();
+
 	getBoundedMapClient.call(srv);
 
 	test_mapPub.publish(srv.response.boundedMap);

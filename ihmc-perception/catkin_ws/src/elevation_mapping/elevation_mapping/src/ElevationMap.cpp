@@ -387,7 +387,7 @@ bool ElevationMap::computeSurfaceNormals(const Eigen::Array2i& topLeftIndex, con
       eigenvalues = solver.eigenvalues().real();
       eigenvectors = solver.eigenvectors().real();
     } else {
-      ROS_DEBUG("Covariance matrix needed for eigen decomposition is degenerated. Expected cause: no noise in data (nPoints = %i)", nPoints);
+      ROS_DEBUG("Covariance matrix needed for eigen decomposition is degenerated. Expected cause: no noise in data (nPoints = %i)", (int)nPoints);
     }
     // Keep the smallest eigenvector as surface normal
     int smallestId(0);
@@ -508,9 +508,9 @@ boost::recursive_mutex& ElevationMap::getRawDataMutex()
 bool ElevationMap::clean()
 {
   boost::recursive_mutex::scoped_lock scopedLockForRawData(rawMapMutex_);
-  rawMap_.get("variance") = rawMap_.get("variance").unaryExpr(VarianceClampOperator<double>(minVariance_, maxVariance_));
-  rawMap_.get("horizontal_variance_x") = rawMap_.get("horizontal_variance_x").unaryExpr(VarianceClampOperator<double>(minHorizontalVariance_, maxHorizontalVariance_));
-  rawMap_.get("horizontal_variance_y") = rawMap_.get("horizontal_variance_y").unaryExpr(VarianceClampOperator<double>(minHorizontalVariance_, maxHorizontalVariance_));
+  rawMap_.get("variance") = rawMap_.get("variance").unaryExpr(VarianceClampOperator<float>(minVariance_, maxVariance_));
+  rawMap_.get("horizontal_variance_x") = rawMap_.get("horizontal_variance_x").unaryExpr(VarianceClampOperator<float>(minHorizontalVariance_, maxHorizontalVariance_));
+  rawMap_.get("horizontal_variance_y") = rawMap_.get("horizontal_variance_y").unaryExpr(VarianceClampOperator<float>(minHorizontalVariance_, maxHorizontalVariance_));
   return true;
 }
 
