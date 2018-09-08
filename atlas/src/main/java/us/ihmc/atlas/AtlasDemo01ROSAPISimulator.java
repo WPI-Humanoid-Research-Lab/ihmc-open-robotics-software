@@ -52,14 +52,14 @@ public class AtlasDemo01ROSAPISimulator extends ROSAPISimulator
       List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> subscribers = new ArrayList<>();
       MessageFactory messageFactory = NodeConfiguration.newPrivate().getTopicMessageFactory();
 
-      if(robotVersion.getHandModel().isHandSimulated())
-      {
-         HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/HandDesiredConfigurationRosMessage");
-         RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber
-               .createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());
-         Map.Entry<String, RosTopicSubscriberInterface<? extends Message>> pair = new AbstractMap.SimpleEntry<String, RosTopicSubscriberInterface<? extends Message>>(nameSpace + "/control/finger_state", sub);
-         subscribers.add(pair);
-      }
+//      if(robotVersion.getHandModel().isHandSimulated())
+//      {
+//         HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/HandDesiredConfigurationRosMessage");
+//         RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber
+//               .createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());
+//         Map.Entry<String, RosTopicSubscriberInterface<? extends Message>> pair = new AbstractMap.SimpleEntry<String, RosTopicSubscriberInterface<? extends Message>>(nameSpace + "/control/finger_state", sub);
+//         subscribers.add(pair);
+//      }
 
       return subscribers;
    }
