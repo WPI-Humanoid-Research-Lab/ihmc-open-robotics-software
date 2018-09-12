@@ -27,84 +27,98 @@ import us.ihmc.utilities.ros.subscriber.RosTopicSubscriberInterface;
 
 public class AtlasDemo01ROSAPISimulator extends ROSAPISimulator
 {
-   private static final String ROBOT_NAME = "atlas";
-   private static final String DEFAULT_ROBOT_MODEL = "ATLAS_UNPLUGGED_V5_NO_HANDS";
+	private static final String ROBOT_NAME = "atlas";
+	private static final String DEFAULT_ROBOT_MODEL = "ATLAS_UNPLUGGED_V5_NO_HANDS";
 
-   private final AtlasRobotVersion robotVersion;
+	//	private final AtlasRobotVersion robotVersion;
+	private AtlasRobotVersion robotVersion;
 
-   public AtlasDemo01ROSAPISimulator(AtlasRobotModel robotModel, DRCStartingLocation startingLocation, String nameSpace, String tfPrefix,
-         boolean runAutomaticDiagnosticRoutine, boolean disableViz,
-         List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> customSubscribers,
-         List<Map.Entry<String, RosTopicPublisher<? extends Message>>> customPublishers) throws IOException
-   {
-      super(robotModel, startingLocation, nameSpace, tfPrefix, runAutomaticDiagnosticRoutine, disableViz);
-      robotVersion = robotModel.getAtlasVersion();
-   }
+	public AtlasDemo01ROSAPISimulator(AtlasRobotModel robotModel, DRCStartingLocation startingLocation, String nameSpace, String tfPrefix,
+			boolean runAutomaticDiagnosticRoutine, boolean disableViz,
+			List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> customSubscribers,
+			List<Map.Entry<String, RosTopicPublisher<? extends Message>>> customPublishers) throws IOException
+	{
+		super(robotModel, startingLocation, nameSpace, tfPrefix, runAutomaticDiagnosticRoutine, disableViz);
+		robotVersion = robotModel.getAtlasVersion();
+	}
 
-   @Override
-   protected CommonAvatarEnvironmentInterface createEnvironment()
-   {
-      return new DefaultCommonAvatarEnvironment();
-   }
+	@Override
+	protected CommonAvatarEnvironmentInterface createEnvironment()
+	{
+		return new DefaultCommonAvatarEnvironment();
+	}
 
-   @Override protected List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> createCustomSubscribers(String nameSpace, PacketCommunicator communicator)
-   {
-      List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> subscribers = new ArrayList<>();
-      MessageFactory messageFactory = NodeConfiguration.newPrivate().getTopicMessageFactory();
+	@Override protected List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> createCustomSubscribers(String nameSpace, PacketCommunicator communicator)
+	{
+		List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> subscribers = new ArrayList<>();
+		MessageFactory messageFactory = NodeConfiguration.newPrivate().getTopicMessageFactory();
 
-//      if(robotVersion.getHandModel().isHandSimulated())
-//      {
-//         HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/HandDesiredConfigurationRosMessage");
-//         RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber
-//               .createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());
-//         Map.Entry<String, RosTopicSubscriberInterface<? extends Message>> pair = new AbstractMap.SimpleEntry<String, RosTopicSubscriberInterface<? extends Message>>(nameSpace + "/control/finger_state", sub);
-//         subscribers.add(pair);
-//      }
+		this.setRobotVersion();
 
-      return subscribers;
-   }
+		if(robotVersion.getHandModel().isHandSimulated())
+		{
+			HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/HandDesiredConfigurationRosMessage");
+			RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber
+					.createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());
+			Map.Entry<String, RosTopicSubscriberInterface<? extends Message>> pair = new AbstractMap.SimpleEntry<String, RosTopicSubscriberInterface<? extends Message>>(nameSpace + "/control/finger_state", sub);
+			subscribers.add(pair);
+		}
 
-   @Override protected List<Map.Entry<String, RosTopicPublisher<? extends Message>>> createCustomPublishers(String nameSpace, PacketCommunicator communicator)
-   {
-      return null;
-   }
+		return subscribers;
+	}
 
-   public static void main(String[] args) throws JSAPException, IOException
-   {
-      Options opt = parseArguments(args);
+	@Override protected List<Map.Entry<String, RosTopicPublisher<? extends Message>>> createCustomPublishers(String nameSpace, PacketCommunicator communicator)
+	{
+		return null;
+	}
 
-      AtlasRobotModel robotModel;
-      try
-      {
-         if (opt.robotModel.equals(DEFAULT_STRING))
-         {
-            robotModel = AtlasRobotModelFactory.createDRCRobotModel(DEFAULT_ROBOT_MODEL, RobotTarget.SCS, false);
-         }
-         else
-         {
-            robotModel = AtlasRobotModelFactory.createDRCRobotModel(opt.robotModel, RobotTarget.SCS, false);
-         }
-      }
-      catch (IllegalArgumentException e)
-      {
-         System.err.println("Incorrect robot model " + opt.robotModel);
-         System.out.println("Robot models: " + AtlasRobotModelFactory.robotModelsToString());
-         return;
-      }
+	public void setRobotVersion() 
+	{
+		if(robotVersion == null)
+		{
+			AtlasRobotModel robotModel = (AtlasRobotModel) this.robotModel;
+			robotVersion = robotModel.getAtlasVersion();
+		}
+		else {
+			System.out.println("Version is already set to : " + robotVersion);
+		}
+	}
+	public static void main(String[] args) throws JSAPException, IOException
+	{
+		Options opt = parseArguments(args);
 
-      DRCStartingLocation startingLocation;
-      try
-      {
-         startingLocation = DRCObstacleCourseStartingLocation.valueOf(opt.startingLocation);
-      }
-      catch (IllegalArgumentException e)
-      {
-         System.err.println("Incorrect starting location " + opt.startingLocation);
-         System.out.println("Starting locations: " + DRCObstacleCourseStartingLocation.optionsToString());
-         return;
-      }
+		AtlasRobotModel robotModel;
+		try
+		{
+			if (opt.robotModel.equals(DEFAULT_STRING))
+			{
+				robotModel = AtlasRobotModelFactory.createDRCRobotModel(DEFAULT_ROBOT_MODEL, RobotTarget.SCS, false);
+			}
+			else
+			{
+				robotModel = AtlasRobotModelFactory.createDRCRobotModel(opt.robotModel, RobotTarget.SCS, false);
+			}
+		}
+		catch (IllegalArgumentException e)
+		{
+			System.err.println("Incorrect robot model " + opt.robotModel);
+			System.out.println("Robot models: " + AtlasRobotModelFactory.robotModelsToString());
+			return;
+		}
 
-      String nameSpace = opt.nameSpace + "/" + ROBOT_NAME;
-      new AtlasDemo01ROSAPISimulator(robotModel, startingLocation, nameSpace, opt.tfPrefix, opt.runAutomaticDiagnosticRoutine, opt.disableViz, null, null);
-   }
+		DRCStartingLocation startingLocation;
+		try
+		{
+			startingLocation = DRCObstacleCourseStartingLocation.valueOf(opt.startingLocation);
+		}
+		catch (IllegalArgumentException e)
+		{
+			System.err.println("Incorrect starting location " + opt.startingLocation);
+			System.out.println("Starting locations: " + DRCObstacleCourseStartingLocation.optionsToString());
+			return;
+		}
+
+		String nameSpace = opt.nameSpace + "/" + ROBOT_NAME;
+		new AtlasDemo01ROSAPISimulator(robotModel, startingLocation, nameSpace, opt.tfPrefix, opt.runAutomaticDiagnosticRoutine, opt.disableViz, null, null);
+	}
 }

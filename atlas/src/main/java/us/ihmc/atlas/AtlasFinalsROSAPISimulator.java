@@ -36,7 +36,8 @@ public class AtlasFinalsROSAPISimulator extends ROSAPISimulator
    private static final boolean CREATE_WALKING = true;
    private static final boolean CREATE_STAIRS = true;
 
-   private final AtlasRobotVersion robotVersion;
+//   private final AtlasRobotVersion robotVersion;
+   private AtlasRobotVersion robotVersion;
 
    public AtlasFinalsROSAPISimulator(AtlasRobotModel robotModel, DRCStartingLocation startingLocation, String nameSpace, String tfPrefix,
          boolean runAutomaticDiagnosticRoutine, boolean disableViz) throws IOException
@@ -55,10 +56,12 @@ public class AtlasFinalsROSAPISimulator extends ROSAPISimulator
    {
       List<Map.Entry<String, RosTopicSubscriberInterface<? extends Message>>> subscribers = new ArrayList<>();
       MessageFactory messageFactory = NodeConfiguration.newPrivate().getTopicMessageFactory();
-
+      
+      this.setRobotVersion();
+      
       if(robotVersion.getHandModel().isHandSimulated())
       {
-         HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/FingerStateRosMessage");
+         HandDesiredConfigurationRosMessage message = messageFactory.newFromType("ihmc_msgs/HandDesiredConfigurationRosMessage");
          RosTopicSubscriberInterface<HandDesiredConfigurationRosMessage> sub = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, communicator, PacketDestination.CONTROLLER.ordinal());
          Map.Entry<String, RosTopicSubscriberInterface<? extends Message>> pair = new AbstractMap.SimpleEntry<String, RosTopicSubscriberInterface<? extends Message>>(nameSpace + "/control/finger_state", sub);
          subscribers.add(pair);
@@ -67,6 +70,18 @@ public class AtlasFinalsROSAPISimulator extends ROSAPISimulator
       return subscribers;
    }
 
+	public void setRobotVersion() 
+	{
+		if(robotVersion == null)
+		{
+			AtlasRobotModel robotModel = (AtlasRobotModel) this.robotModel;
+			robotVersion = robotModel.getAtlasVersion();
+		}
+		else {
+			System.out.println("Version is already set to : " + robotVersion);
+		}
+	}
+	
    @Override protected List<Map.Entry<String, RosTopicPublisher<? extends Message>>> createCustomPublishers(String nameSpace, PacketCommunicator communicator)
    {
       return null;
