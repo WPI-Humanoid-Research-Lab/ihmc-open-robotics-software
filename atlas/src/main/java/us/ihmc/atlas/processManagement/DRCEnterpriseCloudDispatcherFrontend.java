@@ -533,7 +533,7 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
                super.insertString(offs, str, a);
          }
       });
-      leftHandField.setText("40");
+      leftHandField.setText("4");
 
       rightHandField = new JTextField(2);
       rightHandField.setDocument(new PlainDocument()
@@ -545,7 +545,7 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
                super.insertString(offs, str, a);
          }
       });
-      rightHandField.setText("35");
+      rightHandField.setText("3");
 
       JPanel leftPanel = new JPanel();
       leftPanel.setBorder(new EmptyBorder(40, 0, 0, 0));

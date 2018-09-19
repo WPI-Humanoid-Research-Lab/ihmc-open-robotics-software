@@ -112,7 +112,7 @@ public class ThePeoplesGloriousNetworkProcessor
       setupInputs(namespace, robotDataReceiver, fullRobotModel, additionalMessagePackages);
       setupOutputs(namespace, tfPrefix, additionalMessagePackages);
       setupRosLocalization();
-//      setupErrorTopics();
+      setupErrorTopics();
 
       if (customSubscribers != null)
       {
