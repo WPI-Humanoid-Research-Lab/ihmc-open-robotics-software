@@ -55,7 +55,7 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
    private static final String BLUE_TEAM_ACTION_COMMAND = "blue";
    private static final String RED_TEAM_ACTION_COMMAND = "red";
    private static final boolean ENABLE_CONSOLE_OUTPUT = false;
-
+   private final String DEFAULT_ROBOT_MODEL = "ATLAS_UNPLUGGED_V5_DUAL_ROBOTIQ"; 
    private ReconnectingTCPClient netProcClient;
    private final byte[] netProcBuffer;
 
@@ -715,6 +715,9 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
          nextButton.setHorizontalTextPosition(AbstractButton.TRAILING);
          selectRobotModelRadioButtonGroup.add(nextButton);
          selectRobotModelPanel.add(nextButton);
+         if (st == DEFAULT_ROBOT_MODEL) {
+        	 nextButton.setSelected(true);
+         }
       }
    }
 
@@ -736,6 +739,7 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
       atlasControllerFactoryRadioButton.setBorder(BorderFactory.createEmptyBorder(0, 35, 0, -35));
       atlasControllerFactoryRadioButton.setHorizontalAlignment(AbstractButton.LEADING);
       atlasControllerFactoryRadioButton.setHorizontalTextPosition(AbstractButton.TRAILING);
+      atlasControllerFactoryRadioButton.setSelected(true);
 
       selectControllerRadioButtonGroup.add(atlasBDIControllerRadioButton);
       selectControllerRadioButtonGroup.add(atlasControllerFactoryRadioButton);

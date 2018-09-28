@@ -371,7 +371,8 @@ public class AtlasStateEstimatorParameters extends StateEstimatorParameters
    @Override
    public boolean useIMUsForSpineJointVelocityEstimation()
    {
-      return true;
+//      return true;
+	   return false;
    }
    
    @Override
