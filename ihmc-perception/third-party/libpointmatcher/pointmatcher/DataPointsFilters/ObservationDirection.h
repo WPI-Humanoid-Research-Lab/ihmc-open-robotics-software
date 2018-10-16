@@ -2,7 +2,7 @@
 // vim: ts=4:sw=4:noexpandtab
 /*
 
-Copyright (c) 2010--2012,
+Copyright (c) 2010--2018,
 François Pomerleau and Stephane Magnenat, ASL, ETHZ, Switzerland
 You can contact the authors at <f dot pomerleau at gmail dot com> and
 <stephane at magnenat dot net>
@@ -32,52 +32,49 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+#pragma once
 
-#include "pointmatcher/PointMatcher.h"
-#include <cassert>
-#include <iostream>
-#include <fstream>
+#include "PointMatcher.h"
 
-using namespace std;
-using namespace PointMatcherSupport;
-
-typedef PointMatcher<float> PM;
-typedef PM::DataPoints DP;
-
-void usage(char *argv[])
+//! Extract observation direction
+template<typename T>
+struct ObservationDirectionDataPointsFilter: public PointMatcher<T>::DataPointsFilter
 {
-	cerr << "Usage " << argv[0] << " [CONFIG.yaml] INPUT.csv/.vtk OUTPUT.csv/.vtk" << endl;
-	cerr << endl << "Example:" << endl;
-	cerr << argv[0] << " ../examples/data/default-convert.yaml ../examples/data/cloud.00000.vtk /tmp/output.vtk" << endl << endl;
-}
-
-int main(int argc, char *argv[])
-{
-	if (argc < 3)
+	typedef PointMatcherSupport::Parametrizable Parametrizable;
+	typedef PointMatcherSupport::Parametrizable P;
+	typedef Parametrizable::Parameters Parameters;
+	typedef Parametrizable::ParameterDoc ParameterDoc;
+	typedef Parametrizable::ParametersDoc ParametersDoc;
+	typedef Parametrizable::InvalidParameter InvalidParameter;
+	
+	typedef typename PointMatcher<T>::Vector Vector;
+	typedef typename PointMatcher<T>::DataPoints DataPoints;
+	typedef typename PointMatcher<T>::DataPoints::InvalidField InvalidField;
+	
+	inline static const std::string description()
 	{
-		usage(argv);
-		return 1;
+		return "This filter extracts observation directions (vector from point to sensor), considering a sensor at position (x,y,z).\n\n"
+			   "Required descriptors: none.\n"
+		       "Produced descritors:  observationDirections.\n"
+			   "Altered descriptors:  none.\n"
+			   "Altered features:     none.";
 	}
 	
-	setLogger(PM::get().LoggerRegistrar.create("FileLogger"));
-
-	DP d(DP::load(argv[argc-2]));
-	
-	if (argc == 4)
+	inline static const ParametersDoc availableParameters()
 	{
-		ifstream ifs(argv[1]);
-		if (!ifs.good())
-		{
-			cerr << "Cannot open config file " << argv[1] << endl;
-			usage(argv);
-			return 2;
-		}
-		PM::DataPointsFilters f(ifs);
-		f.apply(d);
-
+		return boost::assign::list_of<ParameterDoc>
+			( "x", "x-coordinate of sensor", "0" )
+			( "y", "y-coordinate of sensor", "0" )
+			( "z", "z-coordinate of sensor", "0" )
+		;
 	}
-	
-	d.save(argv[argc-1]);
-	
-	return 0;
-}
+
+	const T centerX;
+	const T centerY;
+	const T centerZ;
+
+	//! Constructor, uses parameter interface
+	ObservationDirectionDataPointsFilter(const Parameters& params = Parameters());
+	virtual DataPoints filter(const DataPoints& input);
+	virtual void inPlaceFilter(DataPoints& cloud);
+};

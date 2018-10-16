@@ -9,11 +9,10 @@ referenceDataPointsFilters:
 matcher:
   KDTreeMatcher:
     knn: 1
-    epsilon: 0 
 
 outlierFilters:
   - TrimmedDistOutlierFilter:
-      ratio: 0.9
+      ratio: 0.95
 
 errorMinimizer:
   PointToPlaneErrorMinimizer

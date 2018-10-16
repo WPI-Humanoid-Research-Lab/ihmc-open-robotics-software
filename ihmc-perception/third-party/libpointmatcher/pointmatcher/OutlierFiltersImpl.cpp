@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "OutlierFiltersImpl.h"
 #include "PointMatcherPrivate.h"
 #include "Functions.h"
+#include "MatchersImpl.h"
 
 #include <algorithm>
 #include <vector>
@@ -63,7 +64,7 @@ template struct OutlierFiltersImpl<double>::NullOutlierFilter;
 template<typename T>
 OutlierFiltersImpl<T>::MaxDistOutlierFilter::MaxDistOutlierFilter(const Parameters& params):
 	OutlierFilter("MaxDistOutlierFilter", MaxDistOutlierFilter::availableParameters(), params),
-	maxDist(Parametrizable::get<T>("maxDist"))
+	maxDist(pow(Parametrizable::get<T>("maxDist"),2)) // we use the square distance later
 {
 }
 
@@ -84,7 +85,7 @@ template struct OutlierFiltersImpl<double>::MaxDistOutlierFilter;
 template<typename T>
 OutlierFiltersImpl<T>::MinDistOutlierFilter::MinDistOutlierFilter(const Parameters& params):
 	OutlierFilter("MinDistOutlierFilter", MinDistOutlierFilter::availableParameters(), params),
-	minDist(Parametrizable::get<T>("minDist"))
+	minDist(pow(Parametrizable::get<T>("minDist"),2))// Note: we use the square distance later
 {
 }
 
@@ -225,7 +226,7 @@ OutlierFiltersImpl<T>::SurfaceNormalOutlierFilter::SurfaceNormalOutlierFilter(co
 	eps(cos(Parametrizable::get<T>("maxAngle"))),
 	warningPrinted(false)
 {
-	//waring: eps is change to cos(maxAngle)!
+	//warning: eps is change to cos(maxAngle)!
 }
 
 template<typename T>
@@ -249,6 +250,11 @@ typename PointMatcher<T>::OutlierWeights OutlierFiltersImpl<T>::SurfaceNormalOut
 			for (int y = 0; y < w.rows(); ++y) // knn 
 			{
 				const int idRef = input.ids(y, x);
+
+				if (idRef == MatchersImpl<T>::NNS::InvalidIndex) {
+					w(y, x) = 0;
+					continue;
+				}
 
 				const Vector normalRef = normalsReference.col(idRef).normalized();
 
@@ -327,18 +333,23 @@ typename PointMatcher<T>::OutlierWeights OutlierFiltersImpl<T>::GenericDescripto
 	{
 		for(int i=0; i < readPtsCount; i++)
 		{
+			const int idRead = input.ids(k, i);
+			if (idRead == MatchersImpl<T>::NNS::InvalidIndex){
+				w(k,i) = 0;
+				continue;
+			}
 			if(useSoftThreshold == false)
 			{
 				if(useLargerThan == true)
 				{
-					if(desc(0, input.ids(k,i)) > threshold)
+					if (desc(0, idRead) > threshold)
 						w(k,i) = 1;
 					else
 						w(k,i) = 0;
 				}
 				else
 				{
-					if(desc(0, input.ids(k,i)) < threshold)
+					if (desc(0, idRead) < threshold)
 						w(k,i) = 1;
 					else
 						w(k,i) = 0;
@@ -347,7 +358,7 @@ typename PointMatcher<T>::OutlierWeights OutlierFiltersImpl<T>::GenericDescripto
 			else
 			{
 				// use soft threshold by assigning the weight using the descriptor
-				w(k,i) = desc(0, input.ids(k,i));
+				w(k,i) = desc(0, idRead);
 			}
 		}
 	}
@@ -361,5 +372,34 @@ typename PointMatcher<T>::OutlierWeights OutlierFiltersImpl<T>::GenericDescripto
 
 template struct OutlierFiltersImpl<float>::GenericDescriptorOutlierFilter;
 template struct OutlierFiltersImpl<double>::GenericDescriptorOutlierFilter;
+
+// RobustWelschOutlierFilter
+template<typename T>
+OutlierFiltersImpl<T>::RobustWelschOutlierFilter::RobustWelschOutlierFilter(const Parameters& params):
+	OutlierFilter("RobustWelschOutlierFilter", RobustWelschOutlierFilter::availableParameters(), params),
+	squaredScale(pow(Parametrizable::get<T>("scale"),2)), //Note: we use squared distance later on
+	squaredApproximation(pow(Parametrizable::get<T>("approximation"),2))
+{
+}
+
+template<typename T>
+typename PointMatcher<T>::OutlierWeights OutlierFiltersImpl<T>::RobustWelschOutlierFilter::compute(
+	const DataPoints& filteredReading,
+	const DataPoints& filteredReference,
+	const Matches& input)
+{
+	OutlierWeights w = exp(- input.dists.array()/squaredScale);
+
+	if(squaredApproximation != std::numeric_limits<T>::infinity())
+	{
+		//Note from Eigen documentation: (if statement).select(then matrix, else matrix)
+		w = (input.dists.array() >= squaredApproximation).select(0.0, w);
+	}
+
+	return w;
+}
+
+template struct OutlierFiltersImpl<float>::RobustWelschOutlierFilter;
+template struct OutlierFiltersImpl<double>::RobustWelschOutlierFilter;
 
 

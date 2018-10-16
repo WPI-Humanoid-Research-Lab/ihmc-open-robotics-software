@@ -1,8 +1,7 @@
-| [Tutorials Home](Tutorials.md)    | [Previous](Compilation.md) | [Next](ApplyingDatafilters.md) |
+| [Tutorials Home](index.md)    | [Previous](Compilation.md) | [Next](ApplyingDatafilters.md) |
 | ------------- |:-------------:| -----:|
 
 # Datapoint Filters
-######Latest update January 16, 2014 by Samuel Charreyron
 
 In this section, the various filters which can be applied to the reading and reference point clouds before performing the ICP process.
 
@@ -36,7 +35,13 @@ Note that *datapoint filters* differ from *outlier filters* which appear further
 
 9. [Shadow Point Filter](#shadowpointhead)
 
-10. [Voxel Grid Filter](#voxelgridhead)
+10. [Voxel Grid Filter](#voxelgridhead) (**deprecated**)
+
+11. [Octree Grid Filter](#octreegridhead)
+
+12. [Normal Space Sampling (NSS) Filter](#nsshead)
+
+13. [Covariance Sampling (CovS) Filter](#covshead)
 
 ### Descriptor Augmenting 
 1. [Observation Direction Filter](#obsdirectionhead)
@@ -82,11 +87,11 @@ In the following example, a box filter of the following dimensions was applied t
 
 Note that only points **outside** the bounding box are removed by the filter by setting the property *removeInside* to 0.  Because the point cloud center is located in the kitchen in the top-left, a square region of 2m x 2m is selected by this filter.  In the following image, the output of the filter is overlaid in white.
 
-|Figure: Top down view of the appartment point cloud with a box filter applied.  The input is shown in color and the output of the filter is overlaid in white   |Parameters used   |
+|Figure: Top down view of the appartment point cloud with a box filter applied.  The <br>input is shown in color and the output of the filter is overlaid in white   |Parameters used   |
 |---|:---|
 |![box filter output](images/box_filt_outside.png "Top down view of the appartment point cloud with a box filter applied.  The input is shown in color and the output of the filter is overlaid in white") |xMin : -1.0 <br> xMax : 1.0 <br>  yMin : -1.0 <br> yMax : 1.0 <br> zMin : -1.0 <br> zMax : 2.0 <br> removeInside : 0 |
 
-|Figure: Top down view of the appartment point cloud with a box filter applied.  The input is shown in color and the output of the filter is overlaid in white   |Parameters used   |
+|Figure: Top down view of the appartment point cloud with a box filter applied.  The <br>input is shown in color and the output of the filter is overlaid in white   |Parameters used   |
 |---|:---|
 |![box filter output](images/box_filt_inside.png "Top down view of the appartment point cloud with a box filter applied and ignore inside applied.  The input is shown in color and the output of the filter is overlaid in white") | xMin : -1.0 <br> xMax : 1.0 <br>  yMin : -1.0 <br> yMax : 1.0 <br> zMin : -1.0 <br> zMax : 2.0 <br> removeInside : 1 |
 
@@ -108,7 +113,7 @@ __Impact on the number of points:__ reduces number of points
 ### Example
 In the following example we observe the effect of the maximum density filter on the apartment point cloud.  Sub-sampling occurs mostly in high density regions, which colored in red in the image below.  The result is an image with lower density overall with the low density regions in blue being preserved.
 
-|Figure: Max density filter applied to subsection of the apartment dataset.  On the original data, low density regions are blue and high density regions are red.  The sampled points are overlaid in white.   | Parameters used |
+|Figure: Max density filter applied to subsection of the apartment dataset.  On the <br>original data, low density regions are blue and high density regions are red.  The <br>sampled points are overlaid in white.   | Parameters used |
 |---|:---| 
 |![max density before](images/appt_0_maxdens.png "Max density filter applied to subsection of the apartment dataset.  On the original data, low density regions are blue and high density regions are red.  The sampled points are overlaid in white.") | maxDensity: 50000 |
 
@@ -129,7 +134,7 @@ __Impact on the number of points:__ reduces number of points
 ### Example
 In the following example, a maximum distance threshold of 1m is applied radially by setting the dimension parameter to -1.  As shown on the image below, points which lie within a sphere of radius 1m centered at the origin are selected by the filter and are displayed in white.  All other points are rejected by the filter.  Were a maximum distance filter to be replaced by an equivalent minimum distance filter, only points outside the sphere would be selected. 
 
-|Figure: Max density filter applied to subsection of the apartment dataset.  On the original data, low density regions are blue and high density regions are red.  The sampled points are overlaid in white.   | Parameters used |
+|Figure: Max density filter applied to subsection of the apartment dataset.  On the <br>original data, low density regions are blue and high density regions are red.  The <br>sampled points are overlaid in white.   | Parameters used |
 |---|:---|
 |![max distance after](images/max_dis.png "After applying maximum distance filter with a distance threshold of 1m and the dimension parameter set to radial") | maxDist : 1.0 <br> dim : -1 |
 
@@ -149,7 +154,8 @@ __Impact on the number of points:__ reduces number of points
 
 ## Maximum Point Count Filter <a name="maxpointcounthead"></a>
 ### Description
-The size of the point cloud is reduced by randomly rejecting points if the total number of points exceeds a threshold.
+Conditional subsampling. This filter reduces the size of the point cloud by randomly dropping points if their number is above `maxCount`. The resulting point cloud while have `maxCount` number of point. the Based on:  Registration and integration of multiple range images for 3-D model construction. Masuda, T. and Sakaue, K. and Yokoya, N. In Pattern Recognition, 1996., Proceedings of the 13th International Conference on. 879--883. 1996.
+
 
 __Required descriptors:__ none   
 __Output descriptor:__ none  
@@ -158,15 +164,11 @@ __Impact on the number of points:__ reduces number of points
 
 |Parameter  |Description  |Default value    |Allowable range|
 |---------  |:---------|:----------------|:--------------|
-|prob        | Probability of keeping a point, 1/decimation factor | 0.75 | min: 0 max: 1 |
+|seed        | srand seed | 0 | min: 0 max: 2147483647 |
 |maxCount |number of points beyond which subsampling occurs | 1000 | min: 0, max: 2147483647|
 
 ### Example
-For the following example we apply a maximum count of 1000, noting that there are over 400,000 points in the input point cloud and a sampling probability of 0.1.  We observe in the output point cloud a point set representing approximately 10% the original number of points selected evenly from the input cloud. 
-
-|Figure: After applying maximum point count filter with a maximum count of 1000 and a sampling probability of 0.1.  Input point cloud contains 404,395 points, filtered point cloud contains 40,200 points.   | Parameters used |
-|---|:---|
-|![max count after](images/max_num.png "After applying maximum point count filter with a maximum count of 1000 and a sampling probability of 0.1") | maxCount : 1000 <br> prob : 0.1|
+No example available.
 
 
 ## Maximum Quantile on Axis Filter <a name="maxquantilehead"></a>
@@ -186,7 +188,7 @@ __Impact on the number of points:__ reduces number of points
 ### Example
 In the following example, maximum quantile filtering is performed over the x-axis with a quantile threshold of 0.5.  Therefore, points which have an x-value which exceeds the 50% quantile are rejected.  The output of the filter is displayed in white and overlaid with the input point cloud in the image below.  A sampling region centered at the origin and extending in both directions of the x-axis is clearly visible.
 
-|Figure: Maximum quantile on axis filter in the x-direction with a maximum quantile of 0.5.   | Parameters used |
+|Figure: Maximum quantile on axis filter in the x-direction with a maximum quantile <br>of 0.5.   | Parameters used |
 |---|:---|  
 |![max quant after](images/max_quant.png "After applying maximum quantile on axis filter in the x-direction with a maximum quantile of 0.5") | dim : 0 <br> ratio : 0.5 |
 
@@ -207,7 +209,7 @@ __Impact on the number of points:__ reduces number of points
 ### Example
 In the following sample, points are kept with a probability of 0.1.  Therefore the total number of points in the output point cloud is approximately 10 times less than the number of points in the input point cloud and the density is decreased overall.
 
-|Figure:  After applying the random sampling filter with a probability of 0.1.  The original data is shown in black and the sampled points in white.   | Parameters used |
+|Figure:  After applying the random sampling filter with a probability of 0.1. <br> The original data is shown in black and the sampled points in white.   | Parameters used |
 |---|:---|  
 |![rand after](images/appt_0_rand.png "After applying the random sampling filter with a probability of 0.1") | prob : 0.1 |
 
@@ -221,7 +223,7 @@ __Output descriptor:__ none
 __Sensor assumed to be at the origin:__ no  
 __Impact on the number of points:__ reduces number of points  
 
-##Shadow Point Filter <a name="shadowpointhead"></a>
+## Shadow Point Filter <a name="shadowpointhead"></a>
 
 ### Description
 
@@ -234,7 +236,10 @@ __Impact on the number of points:__ reduces number of points
 
 *IMPORTANT:* The surface normal descriptors are required in the input point cloud. 
 
-## Voxel Grid Filter <a name="voxelgridhead"></a>
+## Voxel Grid Filter (**deprecated**) <a name="voxelgridhead"></a>
+
+**Deprecated** : please, due to unefficient memory usage, consider switching to [Octree Grid filter](#octreegridhead).
+
 ### Description
 While, the previous filters were sub-sampling filters in that they returned a sub-set of points from the original point cloud, the voxel grid filter instead returns a point cloud with a smaller number of points which should best represent the input point cloud as a whole.
 
@@ -244,16 +249,16 @@ There are two options as to how to represent the distribution of points in a vox
 
 This filter also provides two methods for sub-sampling descriptors.  In the first, all descriptors within a voxel are averaged while in the second, only the first descriptor from a voxel is kept.
 
-__Required descriptors:__  none
+__Required descriptors:__  none  
 __Output descriptor:__ outputs average or single descriptor per voxel if the input cloud contains descriptors  
 __Sensor assumed to be at the origin:__ no  
 __Impact on the number of points:__ reduces number of points  
 
 |Parameter  |Description  |Default value    |Allowable range|
 |---------  |:---------|:----------------|:--------------|
-|vSizeX     |Size of the voxel along the x-axis | 1.0 | -inf to inf|
-|vSizeY     |Size of the voxel along the y-axis | 1.0 | -inf to inf|
-|vSizeZ     |Size of the voxel along the z-axis | 1.0 | -inf to inf|
+|vSizeX     |Size of the voxel along the x-axis | 1.0 | ]0 ; +inf[|
+|vSizeY     |Size of the voxel along the y-axis | 1.0 | ]0 ; +inf[|
+|vSizeZ     |Size of the voxel along the z-axis | 1.0 | ]0 ; +inf[|
 |useCentroid|If 1, down-sample by using the centroid of each voxel.  If 0, use the voxel center | 1 | 1 or 0|
 |averageExistingDescriptors|If 1, descriptors are down-sampled by taking their average in the voxel.  If 0, we use the descriptors from the first point found in the voxel | 1 | 1 or 0|
 
@@ -265,6 +270,133 @@ In this example, we apply the voxel grid filter using centroid down-sampling to 
 |Figure:  Applying the voxel grid filter filter to the appartment point cloud. | Parameters used |
 |---|:---|  
 |![dir after](images/appt_voxel.png "Applying the voxel grid filter filter to a local point cloud") | vSizeX : 0.2 <br> vSizeY : 0.2 <br> vSizeZ : 0,2 <br> useCentroid : 1 |
+
+## Octree Grid Filter <a name="octreegridhead"></a>
+
+### Description
+
+The concept is quite the same as the voxel grid but use an [Octree](https://en.wikipedia.org/wiki/Octree) (3D case) or a [Quadtree](https://en.wikipedia.org/wiki/Quadtree) (2D case). The filter use the efficent spatial representation of the pointcloud by the octree to sub-sample point in each leaf.
+
+Some information about the octree structure:
+- the current implementation ensures to have either 0 or 8 (resp. 4) children for each node of the octree (resp. quadtree)
+- only leaf nodes contain data
+- data contained by the octree are currently the indexes of the points from the `DataPoint` structure
+- processing are applied by calling a callback for each node in a depth-first search ([DFS](https://en.wikipedia.org/wiki/Depth-first_search))
+- parallel build can be enabled (but only the first level is parallelized)
+- the octree can be build given two criterion: number of data by leaf node, or size of the leaf node
+
+**Remark 1:** currently the space is decomposed from the Cartesian coordinates (x,y,z), but there should be no limitation to use other dimensions (such as normal coordinates for instance).
+
+With this new structure, the `DataPointsFilter` named `OctreeGridDataPointsFilter` works as follow:
+- build an octree spatial representation of the point cloud
+- apply a process to sample in each leaf node
+
+Four sampling methods are available:
+- take the first point of each node (`FirstPtsSampler`)
+- take a random point of each node (_quite similar to the previous one since the point cloud is not supposed to be ordered_) (`RandomPtsSampler`)
+- compute [centroid](https://en.wikipedia.org/wiki/Centroid) of each node (_more precise but more costly_) (`CentroidSampler`)
+- compute [medoid](https://en.wikipedia.org/wiki/Medoid) of each node (_more precise but more costly_) (`MedoidSampler`)
+
+**Remark 2:** Theoretically, any process can be applied to the point cloud (sampling, feature enhancement, filtering, etc.) since the octree give an efficient spatial representation of the point cloud (_ex: we could estimate the normal of each leaf_).
+
+__Required descriptors:__  none  
+__Output descriptor:__ none  
+__Sensor assumed to be at the origin:__ no  
+__Impact on the number of points:__ reduces number of points  
+
+|Parameter  |Description  |Default value    |Allowable range|
+|---------  |:---------|:----------------|:--------------|
+|buildParallel	| flag for enabling parallel build of the octree | true (1) | 0 or 1 |
+|maxPointByNode	| number of point under which the octree stop dividing | 1 | min: 1, max: 4294967295 |
+|maxSizeByNode	| size of the bounding box under which the octree stop dividing | 0.0 | min: 0.0, max: +inf |
+|samplingMethod	| method to sample the octree: First Point (0), Random (1), Centroid (2) (more accurate but costly), Medoid (3) (more accurate but costly) | 0 | min: 0, max: 3 |
+
+### Example
+The following example uses a structured point cloud from the apartment dataset. As the pointcloud is structured we use the size criterion set to 20 cm to decompose the point cloud. In each leaf, we took the _centroid_ (bottom) or the _medoid_ (top) colored in green (output points), where the color of the pointcloud represents the indexes in the octree.
+
+|Figure:  Applying the Octree Grid Filter on a structured point cloud  | Parameters used |
+|---|:---|  
+|![octree centroid medoid](https://user-images.githubusercontent.com/38259866/41250974-80e6bee2-6d86-11e8-872f-c5687d7535d5.png "Applying the Octree Grid Filter on a structured point cloud") | maxSizeByNode : 0.2 <br> _at the top_, samplingMethod : 3 (_medoid_) <br> _at the bottom_, samplingMethod : 2 (_centroid_)|
+
+**Remark 3:** using centroid can lead to false results in the ICP registration. In deed, the centroid is not guaranteed to be a point of the cloud, which induce a new spatial representation and so an offset in the registration, whereas the medoid is by construction a point of the cloud. Both produce a similar sampled point cloud, but looking closer we can see that:
+- In the top-right corner, sampled points are contained in the original point cloud
+- In the bottom-right corner, sampled points are out of the point cloud.
+
+## Normal Space Sampling Filter <a name="nsshead"></a>
+
+### Description
+
+Sub-sampling filter based on Normal Space Sampling (NSS) from _S. Rusinkiewicz and M. Levoy, “Efficient Variants of the ICP Algorithm,” in Proceedings Third International Conference on 3-D Digital Imaging and Modeling, 2001, pp. 145–152_. 
+
+The algorithm works as follow:
+1. Construct a set of buckets in the normal-space (stocked in a `std::vector`) 
+1. Then put all points of the data into buckets based on their normal direction; 
+1. Finally, uniformly pick points from all the buckets until the desired number of points is selected.
+
+**Remark:** a point is randomly picked in a bucket that contains multiple points.  
+**Remark:** the uniform sampling is based on a standard Mersenne twister engine
+
+As the normals are supposed normed, the _n_-space can be represented by polar coordinates, with:
+- _theta_, the polar angle in [0 ; pi]
+- _phi_, the azimuthal angle in [0 ; 2pi]
+- _r_=1, the radius can be omitted
+
+Resources to better understand uniform sampling in normal-space can be found [here](http://corysimon.github.io/articles/uniformdistn-on-sphere/).
+
+**Remark:** the current implementation only supports 3D point cloud  
+
+__Required descriptors:__  `normals` (see SurfaceNormalDataPointsFilter)  
+__Output descriptor:__ none  
+__Sensor assumed to be at the origin:__ no  
+__Impact on the number of points:__ reduces number of points  
+	
+|Parameter  |Description  |Default value    |Allowable range|
+|---------  |:---------|:----------------|:--------------|
+|nbSample	| number of point to select | 5000 | min: 1, max: 4294967295|
+|seed	| seed for the random generator | 1 | min: 0, max: 4294967295 |
+|epsilon	| step of discretization for the angle spaces | PI/32 | min: PI/64, max: PI |
+
+### Example
+The following example uses a structured point cloud from the apartment dataset. The following gives the normal representation (on a sphere) of the original point cloud (we can clearly see that some areas are more populated) and the normal representation of the uniform sampled pointcloud (output). 
+
+|Figure: Applying the NSS Filter on a structured point cloud | Parameters used |
+|---|:---|  
+|![nss](https://image.ibb.co/gosJk8/nss.png "Applying the NSS Filter on a structured point cloud") | nbSample : 5000 <br> seed : 1 <br> epsilon : PI/32 |
+
+where the left-white point cloud is the normal distribution of the original point cloud,
+where the right-red point cloud is the normal distribution of the sampled point cloud
+
+## Covariance Sampling Filter <a name="covshead"></a>
+
+### Description
+
+Sub-sampling filter based on Covariance Sampling (CovS) from _N. Gelfand, L. Ikemoto, S. Rusinkiewicz, and M. Levoy, “Geometrically stable sampling for the ICP algorithm,” in Fourth International Conference on 3-D Digital Imaging and Modeling, 2003. 3DIM 2003. Proceedings., 2003, pp. 260–267._ 
+
+The filter analyses the force (_t-normals_: **n**) and the torque (_r-normals_: **n x p**) to select geometrically stable points that can bind the rotational components as well as the translational. Unlike the original article, we match the point-cloud with itself (considering then an overlap of 100%).
+
+Three methods can be used to balance rotation and translation through torque normalization (L):
+- L=1 (no normalization): more _t-normals_
+- L=Lavg (average distance to centroid) : same contribution for _t-normals_ and _r-normals_ as torque is scale-independent
+- L=Lmax (in unit ball): more _r-normals_
+
+__Required descriptors:__  `normals` (see SurfaceNormalDataPointsFilter)  
+__Output descriptor:__ none  
+__Sensor assumed to be at the origin:__ no  
+__Impact on the number of points:__ reduces number of points  
+	
+|Parameter  |Description  |Default value    |Allowable range|
+|---------  |:---------|:----------------|:--------------|
+|nbSample	| number of point to select | 5000 | min: 1, max: 4294967295|
+|torqueNorm	| method for torque normalization: (0) L=1, (1) L=Lavg, (2) L=Lmax | 1 | min: 0, max: 2 |
+
+### Example
+The following example uses a structured point cloud from the apartment dataset. The following gives the selected points (output) considering the three proposed normalization methods (L=1 in blue, L=Lavg in yellow and L=Lmax in red).
+
+|Figure: Applying the CovS Filter on a structured point cloud | Parameters used |
+|---|:---|  
+|![covs](https://user-images.githubusercontent.com/38259866/41663461-7e1954bc-7471-11e8-886e-dcf7439d7f0f.png "Applying the CovS Filter on a structured point cloud") | nbSample : 25000 <br> torqueNorm : <br> 0 (blue) <br> 1 (yellow) <br> 2 (red) |
+
+**Remark:** the filter is not very well suited for large scan with uneven density, it is preferably to use it for computer vision applications, or small scan.
 
 ## Observation Direction Filter <a name="obsdirectionhead"></a>
 
@@ -287,14 +419,14 @@ __Impact on the number of points:__ none
 ### Example
 **Remark:** The following example uses a local point cloud 10 from the apartment dataset.  The filter is used to extract direction informations and a small subset of these directions is shown in the following image.  The arrows point towards the position of the sensor.  The input point cloud is color coded according to the z-elevation of the points (red represents the ceiling and blue the floor).
 
-|Figure:  Applying the observation direction filter to a local point cloud.  A small subset of point observation directions are displayed   | Parameters used |
+|Figure:  Applying the observation direction filter to a local point cloud.  A small <br>subset of point observation directions are displayed   | Parameters used |
 |---|:---|  
 |![dir after](images/appt_obs_dir.png "Applying the observation direction filter to a local point cloud") | x : 0 <br> y : 0 <br> z : 0 |
 
 ## Surface Normal Filter <a name="surfacenormalhead"></a>
 
 ### Description
-The surface normal to each point is estimated by finding a number of neighboring points and taking the eigen-vector corresponding to the smallest eigen-value of all neighboring points.  For more theoretical background on the estimation of normal vectors for a point cloud the reader is invited to visit [the following][1].
+The surface normal to each point is estimated by finding a number of neighboring points and taking the eigen-vector corresponding to the smallest eigen-value of all neighboring points.
 
 Remark that that given a surface, the normal vector can point in two possible directions.  Following the apartment example used herein throughout, the normal vector of a wall can point inside towards the room, or outside the apartment.  To align all normal vectors in the same direction, the [orient normals filter](#orientnormalshead) can be used.
 
@@ -317,12 +449,11 @@ __Impact on the number of points:__ none
 |keepEigenVectors   | Add eigen vectors to descriptors    | 0 | 1: true, 0: false |
 |keepMatchedIds   | Add identifiers of matched points to descriptors (see)    | 0 | 1: true, 0:false |
 
-[1]:http://people.maths.ox.ac.uk/wendland/research/old/reconhtml/node3.html "Holger, Wendland, Mathematical Institute, University of Oxford"
 
 ### Example
 In this example, we again use a local point cloud of the apartment. You may recognize the input point cloud as a small portion of the local cloud used in the observation direction filter.  The surface normals are extracted using 20 neighboring points and epsilon=0.  In this example, for clarity, we only view a wall section of one of the apartment dataset.  A random set of normal vectors is shown in the figure with arrows.  When looking at the arrow directions on the wall, one may see normal vectors either pointing downwards into the apartment or outside the apartment.
 
-|Figure:  Applying the observation direction filter to a local point cloud.  A small subset of point observation directions are displayed   | Parameters used |
+|Figure:  Applying the observation direction filter to a local point cloud.  A small <br>subset of point observation directions are displayed   | Parameters used |
 |---|:---|  
 |![norm after](images/appt_norm.png "Extracting surface normals of a portion of the apartment point cloud") | knn : 20 <br> epsilon : 0 <br> keepNormals : 1 <br> keepDensities : 1|
 
@@ -356,7 +487,7 @@ The same input section is used as for extracting the surface normals in the prev
 ## Sampling Surface Normal Filter <a name="samplingnormhead"></a>
 
 ### Description
-The above samples extract surface normals at every point in the point cloud.  In point clouds representing planar surfaces however, a significant of redundant information is contained in adjacent normal vectors.  This filter attempts to both reduce the number of points within a point cloud and the number of different normal vectors.  The first is achieved by performing either random sub-sampling as seen previously, or by using one point per box (bin sub-sampling).  The latter is achieved by recursively decomposing the point-cloud space into boxes until each box contains at most knn points.  A single normal vector is computed from the knn points in each box.
+The above filters extract surface normals at every point in the point cloud.  In point clouds representing planar surfaces however, a significant redundant information is contained in adjacent normal vectors.  This filter attempts to both reduce the number of points within a point cloud and the number of different normal vectors.  The first is achieved by performing either random sub-sampling as seen previously, or by using one point per box (bin sub-sampling).  The latter is achieved by recursively decomposing the point-cloud space into boxes until each box contains at most knn points.  A single normal vector is computed from the knn points in each box.
 
 __Required descriptors:__  none  
 __Output descriptor:__ 
@@ -381,7 +512,7 @@ __Impact on the number of points:__ reduces number of points
 |keepMatchedIds   | Add identifiers of matched points to descriptors (see)    | 0 | 1: true, 0: false |
 
 ### Example
-We reuse the same apartment section to illustrate the sampling of normal vectors.  The decimation rate used is 0.5 such that half of the points from the original point cloud are discarded randomly.  We use a knn value of 100 such that each box contains at most 100 points.  In the following two figures we extract sample points based on the normals and display the normal vectors at these sample points. We first do so for a ceiling section, followed by a ground section.  Because the ceiling is essentially a large plane, the sampling is low and the normal vector arrows are dispersed relatively equally as shown in the first figure.  On the other hand, the ground section has a more complex structure with adjacent normal vectors pointing in different direction.  This results in a dense sampling of points which is seen in the second figure.
+We reuse the same apartment section to illustrate the sampling of normal vectors.  The decimation rate used is 0.5 such that half of the points from the original point cloud are discarded randomly.  We use a knn value of 100 such that each box contains at most 100 points.  In the following two figures, we extract sample points based on the normals and display the normal vectors at these sample points. We first do so for a ceiling section, followed by a ground section.  Because the ceiling is essentially a large plane, the sampling is low and the normal vector arrows are dispersed relatively equally as shown in the first figure.  On the other hand, the ground section has a higher density of points.  This results in a denser sampling of points which is seen in the second figure.
 
   The box centers are shown in red on the following picture.  It is clear that as opposed to previous filters, adjacent points within a box have the same normal vector.
 
@@ -413,7 +544,7 @@ For this example we use another point cloud dataset from the ASL collection call
 
 In the following image we show a side view of local point cloud 3 in the dataset.  The laser is located at the bottom left corner and one can see the long arched corridor structures.  As we move right in the image point are located further away from the sensor, are therefore less numerous and more uncertain.  The points are colored by the estimation uncertainty obtained with this filter.  More certain points are black, medium certain points are red and less curtain points are white.  Naturally the colour shifts from black to white as we move further away from the laser down the corridor.
 
-|Figure:  Side view of a view 3 from the HG dataset augmented with sensor noise estimations   |Parameters used   |
+|Figure:  Side view of a view 3 from the HG dataset augmented with sensor noise <br>estimations   |Parameters used   |
 |---|:---|
 |![samp norm after](images/hg_noise.png " Side view of a view 3 from the HG dataset") | sensorType : 1 |
 

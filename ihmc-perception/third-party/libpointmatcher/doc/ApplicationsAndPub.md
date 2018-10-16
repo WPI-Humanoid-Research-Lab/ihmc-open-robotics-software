@@ -5,13 +5,21 @@ Here some applications and scientific publications using libpointmatcher.
 Click on the image to play.
 
 
+#### Mapping A Campus
+- Sensor: Velodyne HDL-64E
+- Application: Indoor and outdoor 3D mapping and localization
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=jlAArM_6N-I
+" target="_blank"><img src="http://img.youtube.com/vi/jlAArM_6N-I/0.jpg" 
+alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+
 #### ARTOR: Long-term 3D map maintenance in dynamic environments
 - Sensor: Velodyne HDL-32E
 - Application: 3D mapping and localization
 
+
 <a href="https://www.youtube.com/watch?v=cMgLyLpnsoU" target="_blank">
-<img src="http://img.youtube.com/vi/cMgLyLpnsoU/0.jpg" 
- width="240" height="180" border="10" />
+ <img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/cMgLyLpnsoU.jpg" width="240" height="180"/>
 </a>
 
 #### NIFTi: railyard mapping
@@ -19,7 +27,7 @@ Click on the image to play.
 - Application: 3D mapping and localization
 
 <a href="https://www.youtube.com/watch?v=ygIvzWVfPYk" target="_blank">
-<img src="http://img.youtube.com/vi/ygIvzWVfPYk/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/ygIvzWVfPYk.jpg"
  width="240" height="180" border="10" />
 </a>
 
@@ -29,7 +37,7 @@ Click on the image to play.
 - Application: 3D mapping and localization
 
 <a href="https://www.youtube.com/watch?v=lP5Mj-TGaiw" target="_blank">
-<img src="http://img.youtube.com/vi/lP5Mj-TGaiw/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/lP5Mj-TGaiw.jpg" 
  width="240" height="180" border="10" />
 </a>
 
@@ -39,7 +47,7 @@ Click on the image to play.
 - Application: Navigation
 
 <a href="https://www.youtube.com/watch?v=UCCAUf64tD0" target="_blank">
-<img src="http://img.youtube.com/vi/UCCAUf64tD0/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/UCCAUf64tD0.jpg" 
  width="240" height="180" border="10" />
 </a>
 
@@ -50,7 +58,7 @@ Click on the image to play.
 - Application: 3D mapping and localization
 
 <a href="https://www.youtube.com/watch?v=M5Y99o7um88" target="_blank">
-<img src="http://img.youtube.com/vi/M5Y99o7um88/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/M5Y99o7um88.jpg" 
  width="240" height="180" border="10" />
 </a>
 
@@ -60,7 +68,7 @@ Click on the image to play.
 - Application: 3D mapping and localization
 
 <a href="https://www.youtube.com/watch?v=g8l-Xq4qYeE" target="_blank">
-<img src="http://img.youtube.com/vi/g8l-Xq4qYeE/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/g8l-Xq4qYeE.jpg" 
  width="240" height="180" border="10" />
 </a>
 
@@ -71,7 +79,7 @@ Click on the image to play.
 - Application: 3D model reconstruction
  
 <a href="https://www.youtube.com/watch?v=rIZud3F5IJw" target="_blank">
-<img src="http://img.youtube.com/vi/rIZud3F5IJw/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/rIZud3F5IJw.jpg" 
  width="240" height="180" border="10" />
 </a>
 
@@ -82,15 +90,20 @@ Click on the image to play.
 - Application: 3D mapping and localization
 
 <a href="https://www.youtube.com/watch?v=McxpJGOZTPs" target="_blank">
-<img src="http://img.youtube.com/vi/McxpJGOZTPs/0.jpg" 
+<img src="https://raw.githubusercontent.com/ethz-asl/libpointmatcher/master/doc/images/youtubeCovers/McxpJGOZTPs.jpg" 
  width="240" height="180" border="10" />
 </a>
 
 
 
 ## Publications using libpointmatcher
+1. F. Pomerleau, F. Colas and R. Siegwart (2015), "A Review of Point Cloud Registration Algorithms for Mobile Robotics", Foundations and Trends® in Robotics: Vol. 4: No. 1, pp 1-104. http://dx.doi.org/10.1561/2300000035 or [Research Gate link](https://www.researchgate.net/publication/277558596_A_Review_of_Point_Cloud_Registration_Algorithms_for_Mobile_Robotics)
 
-1.	N. Corso and A. Zakhor, “Indoor Localization Algorithms for an Ambulatory Human Operated 3D Mobile Mapping System.,” Remote Sens., vol. 5, no. 12, 2013.
+1. G. Hitz, F. Pomerleau, F. Colas, and R. Siegwart. "State Estimation for Shore Monitoring Using an Autonomous Surface Vessel." International Symposium on Experimental Robotics (ISER), 2014, 2014.
+
+1. P. Krüsi, B. Bücheler, F. Pomerleau, U. Schwesinger, R. Siegwart, and P. Furgale. "Lighting‐invariant Adaptive Route Following Using Iterative Closest Point Matching." Journal of Field Robotics (2014).
+
+1. N. Corso and A. Zakhor, “Indoor Localization Algorithms for an Ambulatory Human Operated 3D Mobile Mapping System.,” Remote Sens., vol. 5, no. 12, 2013.
 
 1. M. Gianni, G. Gonnelli, A. Sinha, M. Menna, and F. Pirri, “An Augmented Reality approach for trajectory planning and control of tracked vehicles in rescue environments,” Safety, Security, and Rescue Robotics (SSRR), 2013 IEEE International Symposium on, pp. 1–6, 2013.
  

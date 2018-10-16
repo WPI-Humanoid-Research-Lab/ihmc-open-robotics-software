@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MatchersImpl.h"
 #include "OutlierFiltersImpl.h"
 #include "ErrorMinimizersImpl.h"
+#include "ErrorMinimizers/PointToPlane.h"
 #include "TransformationCheckersImpl.h"
 #include "InspectorsImpl.h"
 
@@ -50,7 +51,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     #include "yaml-cpp/yaml.h"
 #else
 	#include "yaml-cpp-pm/yaml.h"
-    namespace YAML = YAML_PM;
 #endif // HAVE_YAML_CPP
 
 using namespace std;
@@ -106,7 +106,7 @@ void PointMatcher<T>::ICPChainBase::setDefault()
 	this->referenceDataPointsFilters.push_back(new typename DataPointsFiltersImpl<T>::SamplingSurfaceNormalDataPointsFilter());
 	this->outlierFilters.push_back(new typename OutlierFiltersImpl<T>::TrimmedDistOutlierFilter());
 	this->matcher.reset(new typename MatchersImpl<T>::KDTreeMatcher());
-	this->errorMinimizer.reset(new typename ErrorMinimizersImpl<T>::PointToPlaneErrorMinimizer());
+	this->errorMinimizer.reset(new PointToPlaneErrorMinimizer<T>());
 	this->transformationCheckers.push_back(new typename TransformationCheckersImpl<T>::CounterTransformationChecker());
 	this->transformationCheckers.push_back(new typename TransformationCheckersImpl<T>::DifferentialTransformationChecker());
 	this->inspector.reset(new typename InspectorsImpl<T>::NullInspector);
@@ -121,7 +121,6 @@ void PointMatcher<T>::ICPChainBase::loadFromYaml(std::istream& in)
 	YAML::Parser parser(in);
 	YAML::Node doc;
 	parser.GetNextDocument(doc);
-	
 	typedef set<string> StringSet;
 	StringSet usedModuleTypes;
 	
@@ -138,10 +137,16 @@ void PointMatcher<T>::ICPChainBase::loadFromYaml(std::istream& in)
 	usedModuleTypes.insert(createModulesFromRegistrar("readingStepDataPointsFilters", doc, pm.REG(DataPointsFilter), readingStepDataPointsFilters));
 	usedModuleTypes.insert(createModulesFromRegistrar("referenceDataPointsFilters", doc, pm.REG(DataPointsFilter), referenceDataPointsFilters));
 	//usedModuleTypes.insert(createModulesFromRegistrar("transformations", doc, pm.REG(Transformation), transformations));
-	this->transformations.push_back(new typename TransformationsImpl<T>::RigidTransformation());
 	usedModuleTypes.insert(createModuleFromRegistrar("matcher", doc, pm.REG(Matcher), matcher));
 	usedModuleTypes.insert(createModulesFromRegistrar("outlierFilters", doc, pm.REG(OutlierFilter), outlierFilters));
 	usedModuleTypes.insert(createModuleFromRegistrar("errorMinimizer", doc, pm.REG(ErrorMinimizer), errorMinimizer));
+
+	// See if to use a rigid transformation
+	if (nodeVal("errorMinimizer", doc) != "PointToPointSimilarityErrorMinimizer")
+		this->transformations.push_back(new typename TransformationsImpl<T>::RigidTransformation());
+	else
+		this->transformations.push_back(new typename TransformationsImpl<T>::SimilarityTransformation());
+	
 	usedModuleTypes.insert(createModulesFromRegistrar("transformationCheckers", doc, pm.REG(TransformationChecker), transformationCheckers));
 	usedModuleTypes.insert(createModuleFromRegistrar("inspector", doc, pm.REG(Inspector),inspector));
 	
@@ -209,6 +214,20 @@ const std::string& PointMatcher<T>::ICPChainBase::createModuleFromRegistrar(cons
 	return regName;
 }
 
+template<typename T>
+std::string PointMatcher<T>::ICPChainBase::nodeVal(const std::string& regName, const PointMatcherSupport::YAML::Node& doc)
+{
+	const YAML::Node *reg = doc.FindValue(regName);
+	if (reg)
+	{
+		std::string name;
+		Parametrizable::Parameters params;
+		PointMatcherSupport::getNameParamsFromYAML(*reg, name, params);
+		return name;
+	}
+	return "";
+}
+
 template struct PointMatcher<float>::ICPChainBase;
 template struct PointMatcher<double>::ICPChainBase;
 
@@ -262,8 +281,8 @@ typename PointMatcher<T>::TransformationParameters PointMatcher<T>::ICP::compute
 	
 	// Create intermediate frame at the center of mass of reference pts cloud
 	//  this help to solve for rotations
-	const int nbPtsReference = referenceIn.features.cols();
-	const Vector meanReference = referenceIn.features.rowwise().sum() / nbPtsReference;
+	const int nbPtsReference = reference.features.cols();
+	const Vector meanReference = reference.features.rowwise().sum() / nbPtsReference;
 	TransformationParameters T_refIn_refMean(Matrix::Identity(dim, dim));
 	T_refIn_refMean.block(0,dim-1, dim-1, 1) = meanReference.head(dim-1);
 	
@@ -302,6 +321,7 @@ typename PointMatcher<T>::TransformationParameters PointMatcher<T>::ICP::compute
 	//const int nbPtsReading = reading.features.cols();
 	this->readingDataPointsFilters.init();
 	this->readingDataPointsFilters.apply(reading);
+	readingFiltered = reading;
 	
 	// Reajust reading position: 
 	// from here reading is express in frame <refMean>
@@ -451,6 +471,10 @@ bool PointMatcher<T>::ICPSequence::setMap(const DataPoints& inputCloud)
 	// from here reference is express in frame <refMean>
 	// Shortcut to do T_refIn_refMean.inverse() * reference
 	mapPointCloud.features.topRows(dim-1).colwise() -= meanMap.head(dim-1);
+
+	// Apply reference filters
+	this->referenceDataPointsFilters.init();
+	this->referenceDataPointsFilters.apply(mapPointCloud);
 	
 	this->matcher->init(mapPointCloud);
 	
@@ -470,20 +494,36 @@ void PointMatcher<T>::ICPSequence::clearMap()
 
 //! Return the map, in global coordinates (slow)
 template<typename T>
-const typename PointMatcher<T>::DataPoints PointMatcher<T>::ICPSequence::getMap() const
+const typename PointMatcher<T>::DataPoints PointMatcher<T>::ICPSequence::getPrefilteredMap() const
 {
 	DataPoints globalMap(mapPointCloud);
-	const int dim(mapPointCloud.features.rows());
-	const Vector meanMapNonHomo(T_refIn_refMean.block(0,dim-1, dim-1, 1));
-	globalMap.features.topRows(dim-1).colwise() += meanMapNonHomo;
+	if(this->hasMap())
+	{
+		const int dim(mapPointCloud.features.rows());
+		const Vector meanMapNonHomo(T_refIn_refMean.block(0,dim-1, dim-1, 1));
+		globalMap.features.topRows(dim-1).colwise() += meanMapNonHomo;
+	}
+
 	return globalMap;
+}
+
+//! Return the map, in global coordinates (slow). Deprecated in favor of getPrefilteredMap()
+template<typename T>
+const typename PointMatcher<T>::DataPoints PointMatcher<T>::ICPSequence::getMap() const {
+	return PointMatcher<T>::ICPSequence::getPrefilteredMap();
 }
 
 //! Return the map, in internal coordinates (fast)
 template<typename T>
-const typename PointMatcher<T>::DataPoints& PointMatcher<T>::ICPSequence::getInternalMap() const
+const typename PointMatcher<T>::DataPoints& PointMatcher<T>::ICPSequence::getPrefilteredInternalMap() const
 {
 	return mapPointCloud;
+}
+
+//! Return the map, in internal coordinates (fast). Deprecated in favor of getPrefilteredInternalMap().
+template<typename T>
+const typename PointMatcher<T>::DataPoints& PointMatcher<T>::ICPSequence::getInternalMap() const {
+	return PointMatcher<T>::ICPSequence::getPrefilteredInternalMap();
 }
 
 //! Apply ICP to cloud cloudIn, with identity as initial guess

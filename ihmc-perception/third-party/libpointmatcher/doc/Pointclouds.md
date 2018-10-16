@@ -1,8 +1,7 @@
-| [Tutorials Home](Tutorials.md)    | [Previous](LinkingProjects.md) | [Next](Transformations.md) |
+| [Tutorials Home](index.md)    | [Previous](LinkingProjects.md) | [Next](Transformations.md) |
 | ------------- |:-------------:| -----:|
 
 # Point Clouds in Libpointmatcher
-######Latest update January 24, 2014 by Samuel Charreyron
 
 The base structure containing library functionality is called `PointMatcher`.  It is restricted to a particular scalar type T through the use of a template: `PointMatcher<T>`.  In almost all situations the type T will either be `double` or `float` and provides developers with the flexibility of choosing which best suits their application.  For simplicity, we recommend using an abbreviated type identifier for `PointMatcher`.  This could for example be the following:
 ```cpp

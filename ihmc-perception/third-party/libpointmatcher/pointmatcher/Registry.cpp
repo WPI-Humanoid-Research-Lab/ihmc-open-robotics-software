@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MatchersImpl.h"
 #include "OutlierFiltersImpl.h"
 #include "ErrorMinimizersImpl.h"
+#include "ErrorMinimizers/PointToPlane.h"
+#include "ErrorMinimizers/PointToPlaneWithCov.h"
 #include "TransformationCheckersImpl.h"
 #include "InspectorsImpl.h"
 
@@ -73,6 +75,7 @@ PointMatcher<T>::PointMatcher()
 	ADD_TO_REGISTRAR(DataPointsFilter, SurfaceNormalDataPointsFilter, typename DataPointsFiltersImpl<T>::SurfaceNormalDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, SamplingSurfaceNormalDataPointsFilter, typename DataPointsFiltersImpl<T>::SamplingSurfaceNormalDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, OrientNormalsDataPointsFilter, typename DataPointsFiltersImpl<T>::OrientNormalsDataPointsFilter)
+	ADD_TO_REGISTRAR_NO_PARAM(DataPointsFilter, IncidenceAngleDataPointsFilter, typename DataPointsFiltersImpl<T>::IncidenceAngleDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, RandomSamplingDataPointsFilter, typename DataPointsFiltersImpl<T>::RandomSamplingDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, MaxPointCountDataPointsFilter, typename DataPointsFiltersImpl<T>::MaxPointCountDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, FixStepSamplingDataPointsFilter, typename DataPointsFiltersImpl<T>::FixStepSamplingDataPointsFilter)
@@ -80,6 +83,12 @@ PointMatcher<T>::PointMatcher()
 	ADD_TO_REGISTRAR(DataPointsFilter, SimpleSensorNoiseDataPointsFilter, typename DataPointsFiltersImpl<T>::SimpleSensorNoiseDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, ObservationDirectionDataPointsFilter, typename DataPointsFiltersImpl<T>::ObservationDirectionDataPointsFilter)
 	ADD_TO_REGISTRAR(DataPointsFilter, VoxelGridDataPointsFilter, typename DataPointsFiltersImpl<T>::VoxelGridDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, CutAtDescriptorThresholdDataPointsFilter, typename DataPointsFiltersImpl<T>::CutAtDescriptorThresholdDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, ElipsoidsDataPointsFilter, typename DataPointsFiltersImpl<T>::ElipsoidsDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, GestaltDataPointsFilter, typename DataPointsFiltersImpl<T>::GestaltDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, OctreeGridDataPointsFilter, typename DataPointsFiltersImpl<T>::OctreeGridDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, NormalSpaceDataPointsFilter, typename DataPointsFiltersImpl<T>::NormalSpaceDataPointsFilter)
+	ADD_TO_REGISTRAR(DataPointsFilter, CovarianceSamplingDataPointsFilter, typename DataPointsFiltersImpl<T>::CovarianceSamplingDataPointsFilter)
 	
 	ADD_TO_REGISTRAR_NO_PARAM(Matcher, NullMatcher, typename MatchersImpl<T>::NullMatcher)
 	ADD_TO_REGISTRAR(Matcher, KDTreeMatcher, typename MatchersImpl<T>::KDTreeMatcher)
@@ -93,12 +102,14 @@ PointMatcher<T>::PointMatcher()
 	ADD_TO_REGISTRAR(OutlierFilter, VarTrimmedDistOutlierFilter, typename OutlierFiltersImpl<T>::VarTrimmedDistOutlierFilter)
 	ADD_TO_REGISTRAR(OutlierFilter, SurfaceNormalOutlierFilter, typename OutlierFiltersImpl<T>::SurfaceNormalOutlierFilter)
 	ADD_TO_REGISTRAR(OutlierFilter, GenericDescriptorOutlierFilter, typename OutlierFiltersImpl<T>::GenericDescriptorOutlierFilter)
+	ADD_TO_REGISTRAR(OutlierFilter, RobustWelschOutlierFilter, typename OutlierFiltersImpl<T>::RobustWelschOutlierFilter)
 	
 	ADD_TO_REGISTRAR_NO_PARAM(ErrorMinimizer, IdentityErrorMinimizer, typename ErrorMinimizersImpl<T>::IdentityErrorMinimizer)
 	ADD_TO_REGISTRAR_NO_PARAM(ErrorMinimizer, PointToPointErrorMinimizer, typename ErrorMinimizersImpl<T>::PointToPointErrorMinimizer)
-	ADD_TO_REGISTRAR(ErrorMinimizer, PointToPlaneErrorMinimizer, typename ErrorMinimizersImpl<T>::PointToPlaneErrorMinimizer)
+	ADD_TO_REGISTRAR_NO_PARAM(ErrorMinimizer, PointToPointSimilarityErrorMinimizer, typename ErrorMinimizersImpl<T>::PointToPointSimilarityErrorMinimizer)
+	ADD_TO_REGISTRAR(ErrorMinimizer, PointToPlaneErrorMinimizer, PointToPlaneErrorMinimizer<T>)
 	ADD_TO_REGISTRAR(ErrorMinimizer, PointToPointWithCovErrorMinimizer, typename ErrorMinimizersImpl<T>::PointToPointWithCovErrorMinimizer)
-	ADD_TO_REGISTRAR(ErrorMinimizer, PointToPlaneWithCovErrorMinimizer, typename ErrorMinimizersImpl<T>::PointToPlaneWithCovErrorMinimizer)
+	ADD_TO_REGISTRAR(ErrorMinimizer, PointToPlaneWithCovErrorMinimizer, PointToPlaneWithCovErrorMinimizer<T>)
 	
 	ADD_TO_REGISTRAR(TransformationChecker, CounterTransformationChecker, typename TransformationCheckersImpl<T>::CounterTransformationChecker)
 	ADD_TO_REGISTRAR(TransformationChecker, DifferentialTransformationChecker, typename TransformationCheckersImpl<T>::DifferentialTransformationChecker)

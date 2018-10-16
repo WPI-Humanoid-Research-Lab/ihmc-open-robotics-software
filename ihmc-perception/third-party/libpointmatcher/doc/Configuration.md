@@ -1,10 +1,7 @@
-| [Tutorials Home](Tutorials.md)    | [Previous](BasicRegistration.md) | [Next](ImportExport.md) |
+| [Tutorials Home](index.md)    | [Previous](BasicRegistration.md) | [Next](ImportExport.md) |
 | ------------- |:-------------:| -----:|
 
 # Creating Custom Configurations with YAML
-######Latest update January 23, 2014 by Samuel Charreyron
-
-***IMPORTANT:*** This tutorial makes use of YAML configuration files.  If you did not install yaml-cpp before installing libpointmatcher, you must do so before following these instructions.  Information on installing yaml-cpp can be found in the [installation instructions](Compilation.md).
 
 ## Overview
 The implementation of the ICP algorithm in libpointmatcher is modular and can be tailored to the user's needs by writing custom configurations.  Configurations in libpointmatcher are defined in YAML files.  Very briefly, [YAML](http://www.yaml.org/) is a document format which allows data to be written in a way which is both readable by a program and by a human.  For a more detailed treatment of the language, refer to the [project's specification page](http://www.yaml.org/spec/1.2/spec.html).
@@ -75,7 +72,7 @@ Below find a list of modules and their possible configurations:
 To load an ICP configuration from a YAML file, use the `PointMatcher<T>::ICPChainBase::loadFromYaml(std::istream& in)` function where `in` represents a `std::istream` to your YAML file.
 
 ## Where To Go From Here
-Now that you have the tools to configure your own ICP chain, we recommend that you make a copy of the default configuration file located at [examples/data/default.yaml](examples/data/default.yaml).  For example:
+Now that you have the tools to configure your own ICP chain, we recommend that you make a copy of the default configuration file located at [examples/data/default.yaml](../examples/data/default.yaml).  For example:
 
 `cp examples/data/default.yaml my_config.yaml`
 

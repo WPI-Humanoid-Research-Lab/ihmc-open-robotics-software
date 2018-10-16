@@ -52,11 +52,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	{
 		class Node;
 	}
-    namespace YAML = YAML_PM;
 #endif // HAVE_YAML_CPP
 
 namespace PointMatcherSupport
 {
+#ifdef SYSTEM_YAML_CPP
+	namespace YAML = ::YAML;
+#else
+	namespace YAML = ::YAML_PM;
+#endif
+
 	//! Retrieve name and parameters from a yaml node
 	void getNameParamsFromYAML(const YAML::Node& module, std::string& name, Parametrizable::Parameters& params);
 
@@ -94,13 +99,15 @@ namespace PointMatcherSupport
 			{
 				C* instance(new C(params));
 				
-				// check that there was no unsed parameter
+				// check that all parameters were set
 				for (BOOST_AUTO(it, params.begin()); it != params.end() ;++it)
 				{
-					if (instance->parametersUsed.find(it->first) == instance->parametersUsed.end())
+					if (instance->parametersUsed.find(it->first) == instance->parametersUsed.end()){
+						delete instance;
 						throw Parametrizable::InvalidParameter(
 							(boost::format("Parameter %1% for module %2% was set but is not used") % it->first % className).str()
 						);
+					}
 				}
 				
 				return instance;
