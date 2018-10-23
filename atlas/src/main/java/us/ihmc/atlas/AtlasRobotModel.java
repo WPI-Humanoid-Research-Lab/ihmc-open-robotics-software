@@ -485,12 +485,11 @@ public class AtlasRobotModel implements DRCRobotModel, SDFDescriptionMutator
             {
                modifyLinkInertialPose(linkHolder, "-0.043 0.00229456 0.316809 0 -0 0");
 //               modifyLinkMass(linkHolder, 84.609);
-//               modifyLinkMass(linkHolder, 63.73); -- this is the value in urdf. why is it higher here?
             }
             else
             {
                modifyLinkInertialPose(linkHolder, "0.017261 0.0032352 0.3483 0 0 0");
-               modifyLinkMass(linkHolder, 60.009);
+               modifyLinkMass(linkHolder, 60.009); // should this be 62.563
                double ixx = 1.5;
                double ixy = 0.0;
                double ixz = 0.1;

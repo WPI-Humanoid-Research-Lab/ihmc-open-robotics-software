@@ -47,6 +47,10 @@ public class AtlasROSAPINetworkProcessor
          networkProcessorParameters.enableUiModule(true);
          networkProcessorParameters.enableROSAPICommunicator(true);
          networkProcessorParameters.enableControllerCommunicator(true);
+         if(robotModel.getHandModel() != null) 
+         {
+        	 networkProcessorParameters.enableHandModule(true);
+         }
          DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkProcessorParameters);
          new UiPacketToRosMsgRedirector(robotModel, rosUri, rosAPICommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
       }

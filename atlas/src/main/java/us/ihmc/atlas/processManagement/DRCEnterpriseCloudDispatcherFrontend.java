@@ -62,7 +62,7 @@ public class DRCEnterpriseCloudDispatcherFrontend implements Runnable
    private ReconnectingTCPClient controllerClient;
    private final byte[] controllerBuffer;
 
-   private static String netProcMachineIpAddress = "10.3.3.101";
+   private static String netProcMachineIpAddress = "10.3.3.102";
    private static String controllerMachineIpAddress = "10.3.3.100";
 
    private JFrame frame;

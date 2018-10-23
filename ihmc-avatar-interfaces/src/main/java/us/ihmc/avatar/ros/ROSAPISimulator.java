@@ -70,6 +70,10 @@ abstract public class ROSAPISimulator
       networkProcessorParameters.enableROSAPICommunicator(true);
       networkProcessorParameters.enableBehaviorModule(true);
       networkProcessorParameters.enableBehaviorVisualizer(true);
+      if (robotModel.getHandModel() != null)
+      {
+    	  networkProcessorParameters.enableHandModule(true);
+      }
 
       if (runAutomaticDiagnosticRoutine)
       {

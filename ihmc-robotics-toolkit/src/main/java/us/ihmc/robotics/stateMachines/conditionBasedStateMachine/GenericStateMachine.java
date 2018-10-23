@@ -24,6 +24,7 @@ import us.ihmc.robotics.trajectories.providers.DoubleProvider;
 public class GenericStateMachine<E extends Enum<E>, T extends State<E>> implements TimeInCurrentStateProvider, PreviousStateProvider<E, State<E>>
 {
    private static final boolean DEBUG = false;
+//	private static final boolean DEBUG = true;
 
    private final EnumMap<E, T> enumsToStates;
 

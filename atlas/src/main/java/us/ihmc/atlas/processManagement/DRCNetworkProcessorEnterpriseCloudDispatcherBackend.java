@@ -29,7 +29,7 @@ public class DRCNetworkProcessorEnterpriseCloudDispatcherBackend implements Runn
    private final byte[] buffer;
 
    private static String scsMachineIPAddress = "http://10.3.3.3:11311";
-   private static String rosMasterURI = "http://10.3.3.101:11311";
+   private static String rosMasterURI = "http://10.3.3.102:11311";
 
    private static String[] javaArgs = new String[] {"-Xms2048m", "-Xmx2048m"};
 
@@ -155,9 +155,9 @@ public class DRCNetworkProcessorEnterpriseCloudDispatcherBackend implements Runn
 //         networkProcessorSpawner.spawn(AtlasNetworkProcessor.class, javaArgs, new String[] {"--ros-uri", rosMasterURI, "--scs-ip", scsMachineIPAddress, "-m", robotModel, "--realRobot",
 //            "-l", "10.66.171.1" + leftHandIP, "-r", "10.66.171.1" + rightHandIP });
     	  System.out.println("-m"+ robotModel+ " --realRobot"+
-    	            " -l"+ " 192.168.131.10" + leftHandIP+ " -r"+ " 192.168.131.10" + rightHandIP );
+    	            " -l"+ " 192.168.135.103" + leftHandIP+ " -r"+ " 192.168.134.103" + rightHandIP );
     	  networkProcessorSpawner.spawn(AtlasNetworkProcessor.class, javaArgs, new String[] {"-m", robotModel, "--realRobot", 
-    			  "-l", "192.168.131.10" + leftHandIP, "-r", "192.168.131.10" + rightHandIP });
+    			  "-l", "192.168.135.103", "-r", "192.168.134.103"});
     	  System.out.println("spawned the network processor");
          try
          {
