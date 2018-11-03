@@ -20,8 +20,11 @@ import us.ihmc.communication.configuration.NetworkParameters;
 import us.ihmc.communication.packetCommunicator.PacketCommunicator;
 import us.ihmc.communication.util.NetworkPorts;
 import us.ihmc.humanoidRobotics.kryo.IHMCCommunicationKryoNetClassList;
+import us.ihmc.robotics.robotSide.RobotSide;
 import us.ihmc.sensorProcessing.communication.packets.dataobjects.RobotConfigurationData;
+import us.ihmc.tools.thread.CloseableAndDisposableRegistry;
 import us.ihmc.utilities.ros.RosMainNode;
+import us.ihmc.robotiq.control.RobotiqHandCommandManager;
 
 public class AtlasROSAPINetworkProcessor
 {
@@ -32,6 +35,9 @@ public class AtlasROSAPINetworkProcessor
    private static String nodeName = "/robot_data";
 
    private static final boolean ENABLE_UI_PACKET_TO_ROS_CONVERTER = true;
+   
+   private final RobotiqHandCommandManager leftHandManager;
+   private final RobotiqHandCommandManager rightHandManager;
    
    public AtlasROSAPINetworkProcessor(DRCRobotModel robotModel, String nameSpace, String tfPrefix) throws IOException
    {
@@ -47,9 +53,18 @@ public class AtlasROSAPINetworkProcessor
          networkProcessorParameters.enableUiModule(true);
          networkProcessorParameters.enableROSAPICommunicator(true);
          networkProcessorParameters.enableControllerCommunicator(true);
+         
+         CloseableAndDisposableRegistry closeableAndDisposableRegistry = new CloseableAndDisposableRegistry();
+         
          if(robotModel.getHandModel() != null) 
          {
         	 networkProcessorParameters.enableHandModule(true);
+        	 leftHandManager = new RobotiqHandCommandManager(RobotSide.LEFT);
+        	 rightHandManager = new RobotiqHandCommandManager(RobotSide.RIGHT);
+         }
+         else {
+        	 leftHandManager = null;
+        	 rightHandManager = null;
          }
          DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkProcessorParameters);
          new UiPacketToRosMsgRedirector(robotModel, rosUri, rosAPICommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
@@ -65,6 +80,7 @@ public class AtlasROSAPINetworkProcessor
       rosMainNode.execute();
 
       rosAPICommunicator.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
+      
       new ThePeoplesGloriousNetworkProcessor(rosUri, rosAPICommunicator, robotModel, nameSpace, tfPrefix);
    }
    
@@ -105,6 +121,7 @@ public class AtlasROSAPINetworkProcessor
       }
       String tfPrefixArg = config.getString("tfPrefix");
       String nodeNameSpacePrefix = config.getString("namespace");
+      
       new AtlasROSAPINetworkProcessor(robotModel, nodeNameSpacePrefix, tfPrefixArg);
    }
 }

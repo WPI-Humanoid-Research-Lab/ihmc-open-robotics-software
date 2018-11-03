@@ -22,7 +22,7 @@ import us.ihmc.commons.thread.ThreadTools;
 
 public class RobotiqControlThread extends HandControlThread
 {
-   private final boolean CALIBRATE_ON_CONNECT = false;
+   private final boolean CALIBRATE_ON_CONNECT = true;
    
    private final RobotSide robotSide;
    private final RobotiqHandCommunicator robotiqHand;
@@ -81,11 +81,12 @@ public class RobotiqControlThread extends HandControlThread
 
          if (handStatus.hasError())
          {
-//            System.out.println(handStatus.getFaultStatus().name());
+            System.out.println(handStatus.getFaultStatus().name());
          }
          
          if (handDesiredConfigurationMessageSubscriber.isNewDesiredConfigurationAvailable())
          {
+        	 System.out.println("received new handDesiredConfigurationMessage "+ robotSide.toString());
             HandDesiredConfigurationMessage packet = handDesiredConfigurationMessageSubscriber.pollMessage();
             HandConfiguration state = packet.getHandDesiredConfiguration();
             

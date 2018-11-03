@@ -2,6 +2,7 @@ package us.ihmc.avatar.rosAPI;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import org.ros.internal.message.Message;
 import org.ros.message.MessageFactory;
 import org.ros.node.NodeConfiguration;
 
+import ihmc_msgs.HandDesiredConfigurationRosMessage;
 import us.ihmc.avatar.drcRobot.DRCRobotModel;
 import us.ihmc.avatar.ros.DRCROSPPSTimestampOffsetProvider;
 import us.ihmc.avatar.ros.IHMCPacketToMsgPublisher;
@@ -51,6 +53,12 @@ import us.ihmc.utilities.ros.subscriber.AbstractRosTopicSubscriber;
 import us.ihmc.utilities.ros.subscriber.RosTopicSubscriberInterface;
 import us.ihmc.wholeBodyController.DRCRobotJointMap;
 
+
+import us.ihmc.communication.util.NetworkPorts;
+import us.ihmc.humanoidRobotics.kryo.IHMCCommunicationKryoNetClassList;
+
+
+
 public class ThePeoplesGloriousNetworkProcessor
 {
    private static final String nodeName = "/controller";
@@ -61,6 +69,9 @@ public class ThePeoplesGloriousNetworkProcessor
    private final PacketCommunicator controllerCommunicationBridge;
    private final ObjectCommunicator scsSensorCommunicationBridge;
 
+   private final PacketCommunicator LeftHandCommunicator;
+   private final PacketCommunicator RightHandCommunicator;
+   
    private final ArrayList<AbstractRosTopicSubscriber<?>> subscribers;
    private final ArrayList<RosTopicPublisher<?>> publishers;
 
@@ -103,6 +114,38 @@ public class ThePeoplesGloriousNetworkProcessor
       this.nodeConfiguration = NodeConfiguration.newPrivate();
       this.messageFactory = nodeConfiguration.getTopicMessageFactory();
       this.fullRobotModel = robotModel.createFullRobotModel();
+      
+      //---------------------------------------------------------------------------------------------------------------------//
+      // create hand communicators
+      this.LeftHandCommunicator = 
+    		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.LEFT_HAND_MANAGER_PORT,
+    				  													new IHMCCommunicationKryoNetClassList());
+      this.RightHandCommunicator = 
+    		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.RIGHT_HAND_MANAGER_PORT,
+    				  													new IHMCCommunicationKryoNetClassList());
+      
+      // connect hand communicators
+      try 
+      {    	  
+    	  System.out.println("connecting left hand ...");
+    	  this.LeftHandCommunicator.connect();
+      }
+      catch (IOException e1)
+      {
+    	  e1.printStackTrace();
+      }
+      
+      try 
+      {    	  
+    	  System.out.println("connecting right hand ...");
+    	  this.RightHandCommunicator.connect();
+      }
+      catch (IOException e1)
+      {
+    	  e1.printStackTrace();
+      }
+      //---------------------------------------------------------------------------------------------------------------------//
+      
       HumanoidRobotDataReceiver robotDataReceiver = new HumanoidRobotDataReceiver(fullRobotModel, null);
       rosAPI_communicator.attachListener(RobotConfigurationData.class, robotDataReceiver);
       rosAPI_communicator.attachListener(RobotConfigurationData.class, ppsOffsetProvider);
@@ -225,13 +268,35 @@ public class ThePeoplesGloriousNetworkProcessor
          RosMessagePacket rosAnnotation = (RosMessagePacket) inputType.getAnnotation(RosMessagePacket.class);
          String rosMessageTypeString = IHMCROSTranslationRuntimeTools.getROSMessageTypeStringFromIHMCMessageClass(inputType);
          Message message = messageFactory.newFromType(rosMessageTypeString);
+         
+         IHMCMsgToPacketSubscriber<Message> subscriber;
+         
+         /*
+          * check if the message is of the type HandDesiredConfigurationRosMessage and bind appropriate Communicator
+          * (i.e HandDesiredConfigurationRosMessage to LeftHandCommunicator or RightHandCommunicator 
+          * and control messages to controllerCommunicationBridge).
+          */
+         if(message instanceof HandDesiredConfigurationRosMessage)
+         {
 
-         IHMCMsgToPacketSubscriber<Message> subscriber = IHMCMsgToPacketSubscriber
-               .createIHMCMsgToPacketSubscriber(message, controllerCommunicationBridge, PacketDestination.CONTROLLER.ordinal());
+        	 if (((HandDesiredConfigurationRosMessage) message).getRobotSide()==HandDesiredConfigurationRosMessage.LEFT) 
+        	 {        		 
+        		 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, LeftHandCommunicator, PacketDestination.LEFT_HAND.ordinal());
+        	 }
+        	 else 
+        	 {
+        		 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, RightHandCommunicator, PacketDestination.RIGHT_HAND.ordinal());	 
+        	 }
+         }
+         else 
+         {	 
+        	 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, controllerCommunicationBridge, PacketDestination.CONTROLLER.ordinal());
+         }
+         
          subscribers.add(subscriber);
          rosMainNode.attachSubscriber(namespace + rosAnnotation.topic(), subscriber);
       }
-
+      
       RequestControllerStopSubscriber requestStopSubscriber = new RequestControllerStopSubscriber(controllerCommunicationBridge);
       rosMainNode.attachSubscriber(namespace + "/control/request_stop", requestStopSubscriber);
    }
