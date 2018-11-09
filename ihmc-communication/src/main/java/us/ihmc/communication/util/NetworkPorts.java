@@ -60,7 +60,7 @@ public class NetworkPorts
    // Teleop ports
    public static final NetworkPorts XBOX_CONTROLLER_TELEOP_PORT = new NetworkPorts(3001);
    
-   public static final NetworkPorts CUSTOM_ROBOTIQ_HAND_COMMAND_DISPACHER_PORT = new NetworkPorts(8085);
+   public static final NetworkPorts CUSTOM_ROBOTIQ_HAND_COMMAND_DISPATCHER_PORT = new NetworkPorts(8085);
 
    // Dynamic ports for testing purposes
    public static NetworkPorts createMissionControlIntraprocessPort(NetworkPorts port)

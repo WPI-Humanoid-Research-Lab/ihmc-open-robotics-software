@@ -23,20 +23,21 @@ import us.ihmc.utilities.ros.RosTools;
 
 public class ROSRobotiqCommandDispatcher implements Runnable
 {
-//	CloseableAndDisposableRegistry closeableAndDisposableRegistry = new CloseableAndDisposableRegistry();
-   private final HandDesiredConfigurationMessageSubscriber handDesiredConfigurationMessageSubscriber = new HandDesiredConfigurationMessageSubscriber(null);
 
    private final RobotiqHandCommandManager rightRobotiqHandCommandManager;   
    private final RobotiqHandCommandManager leftRobotiqHandCommandManager;
-   private final PacketCommunicator LeftHandCommunicator;
+   
    private final PacketCommunicator RightHandCommunicator; 
+   private final PacketCommunicator LeftHandCommunicator;
+   
    private final PacketCommunicator IHMCHandDesiredMessageCommunicator;
    
    public ROSRobotiqCommandDispatcher( )
    {
-      IHMCHandDesiredMessageCommunicator = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.CUSTOM_ROBOTIQ_HAND_COMMAND_DISPACHER_PORT,
-				new IHMCCommunicationKryoNetClassList());
-//      IHMCHandDesiredMessageCommunicator.attachListener(HandDesiredConfigurationMessage.class, handDesiredConfigurationMessageSubscriber);
+	 //---------------------------------------------------------------------------------------------------------------------// 
+      IHMCHandDesiredMessageCommunicator = PacketCommunicator.createIntraprocessPacketCommunicator(
+    		  NetworkPorts.CUSTOM_ROBOTIQ_HAND_COMMAND_DISPATCHER_PORT, new IHMCCommunicationKryoNetClassList());
+
       
       try
       {
@@ -53,7 +54,7 @@ public class ROSRobotiqCommandDispatcher implements Runnable
       rightRobotiqHandCommandManager = new RobotiqHandCommandManager(RobotSide.RIGHT);
       leftRobotiqHandCommandManager = new RobotiqHandCommandManager(RobotSide.LEFT);
       
-    //---------------------------------------------------------------------------------------------------------------------//
+      //---------------------------------------------------------------------------------------------------------------------//
       // create hand communicators
       this.LeftHandCommunicator = 
     		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.LEFT_HAND_MANAGER_PORT,
@@ -84,13 +85,14 @@ public class ROSRobotiqCommandDispatcher implements Runnable
       }
       //---------------------------------------------------------------------------------------------------------------------//
       System.out.println("Hand packet router running");
+      
+      // Callback for /ihmc_ros/atlas/control/hand_desired_configuration
       IHMCHandDesiredMessageCommunicator.attachListener(
     	      HandDesiredConfigurationMessage.class, new PacketConsumer<HandDesiredConfigurationMessage>()
     	      {
     	         public void receivedPacket(HandDesiredConfigurationMessage ihmcMessage)
     	         {
     	        	 System.out.println(this.getClass().toString()+"->side"+ihmcMessage.robotSide.toString()+":"+ihmcMessage.getHandDesiredConfiguration().toString());
-//    	            sendHandCommand(object);
     	        	 if (ihmcMessage.getRobotSide()==RobotSide.LEFT) {
     	             	System.out.println("got LEFT HAND msg");
     	             	LeftHandCommunicator.send(ihmcMessage);
@@ -111,19 +113,7 @@ public class ROSRobotiqCommandDispatcher implements Runnable
 	   System.out.println("Running Hand Dispacher ...");
       while (true)
       {
-         if (handDesiredConfigurationMessageSubscriber.isNewDesiredConfigurationAvailable())
-         {
-            HandDesiredConfigurationMessage ihmcMessage = handDesiredConfigurationMessageSubscriber.pollMessage();
-            if (ihmcMessage.getRobotSide()==RobotSide.LEFT) {
-            	System.out.println("got LEFT HAND msg");
-            	LeftHandCommunicator.send(ihmcMessage);
-            }
-            else 
-            {
-            	System.out.println("got RIGHT HAND msg");
-            	RightHandCommunicator.send(ihmcMessage);
-            }
-         }
+         
       }
    }
 }

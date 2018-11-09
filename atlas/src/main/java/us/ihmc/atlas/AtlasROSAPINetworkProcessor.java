@@ -54,11 +54,6 @@ public class AtlasROSAPINetworkProcessor
 
    private static final boolean ENABLE_UI_PACKET_TO_ROS_CONVERTER = true;
    
-//   private final RobotiqHandCommandManager leftHandManager;
-//   private final RobotiqHandCommandManager rightHandManager;
-   
-//   private final PacketCommunicator LeftHandCommunicator;
-//   private final PacketCommunicator RightHandCommunicator;
    
    public AtlasROSAPINetworkProcessor(DRCRobotModel robotModel, String nameSpace, String tfPrefix) throws IOException
    {
@@ -80,15 +75,11 @@ public class AtlasROSAPINetworkProcessor
          if(robotModel.getHandModel() != null) 
          {
         	 networkProcessorParameters.enableHandModule(true);
-//        	 leftHandManager = new RobotiqHandCommandManager(RobotSide.LEFT);
-//        	 rightHandManager = new RobotiqHandCommandManager(RobotSide.RIGHT);
+        	 
         	 new Thread(new ROSRobotiqCommandDispatcher ()).start();
         	 System.out.println("ROSRobotiqCommandDispatcher Thread started");
          }
-         else {
-//        	 leftHandManager = null;
-//        	 rightHandManager = null;
-         }
+        
          DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkProcessorParameters);
          new UiPacketToRosMsgRedirector(robotModel, rosUri, rosAPICommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
       }

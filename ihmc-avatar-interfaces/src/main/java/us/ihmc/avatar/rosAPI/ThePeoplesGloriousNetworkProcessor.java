@@ -69,8 +69,7 @@ public class ThePeoplesGloriousNetworkProcessor
    private final PacketCommunicator controllerCommunicationBridge;
    private final ObjectCommunicator scsSensorCommunicationBridge;
 
-   private final PacketCommunicator LeftHandCommunicator;
-//   private final PacketCommunicator RightHandCommunicator;
+   private final PacketCommunicator handCommandDispatcherCommunicator;
    
    private final ArrayList<AbstractRosTopicSubscriber<?>> subscribers;
    private final ArrayList<RosTopicPublisher<?>> publishers;
@@ -116,35 +115,21 @@ public class ThePeoplesGloriousNetworkProcessor
       this.fullRobotModel = robotModel.createFullRobotModel();
       
       //---------------------------------------------------------------------------------------------------------------------//
-      // create hand communicators
-      this.LeftHandCommunicator = 
-    		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.CUSTOM_ROBOTIQ_HAND_COMMAND_DISPACHER_PORT,
+      // create hand dispatcher communicators
+      this.handCommandDispatcherCommunicator = 
+    		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.CUSTOM_ROBOTIQ_HAND_COMMAND_DISPATCHER_PORT,
     				  													new IHMCCommunicationKryoNetClassList());
-//      this.RightHandCommunicator = 
-//    		  PacketCommunicator.createIntraprocessPacketCommunicator(	NetworkPorts.RIGHT_HAND_MANAGER_PORT,
-//    				  													new IHMCCommunicationKryoNetClassList());
-      
-      // connect hand communicators
       try 
       {    	  
-    	  System.out.println("connecting CUSTOM_ROBOTIQ_HAND_COMMAND_DISPACHER_PORT hand ...");
-    	  this.LeftHandCommunicator.connect();
-    	  System.out.println("connected CUSTOM_ROBOTIQ_HAND_COMMAND_DISPACHER_PORT hand ...");
+    	  this.handCommandDispatcherCommunicator.connect();
+
       }
       catch (IOException e1)
       {
     	  e1.printStackTrace();
       }
       
-//      try 
-//      {    	  
-//    	  System.out.println("connecting right hand ...");
-//    	  this.RightHandCommunicator.connect();
-//      }
-//      catch (IOException e1)
-//      {
-//    	  e1.printStackTrace();
-//      }
+
       //---------------------------------------------------------------------------------------------------------------------//
       
       HumanoidRobotDataReceiver robotDataReceiver = new HumanoidRobotDataReceiver(fullRobotModel, null);
@@ -280,36 +265,14 @@ public class ThePeoplesGloriousNetworkProcessor
           */
          if(message instanceof HandDesiredConfigurationRosMessage)
          {
-        	 System.out.println("config type "+message.toString());
-
-//        	 if (((HandDesiredConfigurationRosMessage) message).getRobotSide()==HandDesiredConfigurationRosMessage.LEFT) 
-//        	 {        		 
-//        		 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, LeftHandCommunicator, PacketDestination.LEFT_HAND.ordinal());
-//        	 }
-//        	 else 
-//        	 {
-//        		 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, RightHandCommunicator, PacketDestination.RIGHT_HAND.ordinal());	 
-//        	 }
-        	 
-
-        	 IHMCMsgToPacketSubscriber<Message> subscriber_L = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, LeftHandCommunicator, PacketDestination.LEFT_HAND.ordinal());
-
-//        	 IHMCMsgToPacketSubscriber<Message> subscriber_R = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, RightHandCommunicator, PacketDestination.RIGHT_HAND.ordinal());
-        	 
-        	 subscribers.add(subscriber_L);
-//        	 subscribers.add(subscriber_R);
-
-        	 rosMainNode.attachSubscriber(namespace + rosAnnotation.topic(), subscriber_L);
-//        	 rosMainNode.attachSubscriber(namespace + rosAnnotation.topic(), subscriber_R);
-        	 
+        	 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, handCommandDispatcherCommunicator, PacketDestination.LEFT_HAND.ordinal());
          }
          else 
          {	 
         	 subscriber = IHMCMsgToPacketSubscriber.createIHMCMsgToPacketSubscriber(message, controllerCommunicationBridge, PacketDestination.CONTROLLER.ordinal());
-        	 subscribers.add(subscriber);
-        	 rosMainNode.attachSubscriber(namespace + rosAnnotation.topic(), subscriber);
-
          }
+         subscribers.add(subscriber);
+         rosMainNode.attachSubscriber(namespace + rosAnnotation.topic(), subscriber);
          
       }
       
