@@ -42,6 +42,7 @@ public class RobotiqHandCommandManager extends HandCommandManager
       {
          public void receivedPacket(HandDesiredConfigurationMessage object)
          {
+        	 System.out.println(this.getClass().toString()+"->side"+object.robotSide.toString()+":"+object.getHandDesiredConfiguration().toString());
             sendHandCommand(object);
          }
       });

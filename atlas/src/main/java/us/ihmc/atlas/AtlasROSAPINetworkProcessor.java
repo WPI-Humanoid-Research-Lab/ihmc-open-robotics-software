@@ -2,28 +2,46 @@ package us.ihmc.atlas;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.ros.internal.message.Message;
+import org.ros.message.MessageFactory;
+import org.ros.node.NodeConfiguration;
 
 import com.martiansoftware.jsap.FlaggedOption;
 import com.martiansoftware.jsap.JSAP;
 import com.martiansoftware.jsap.JSAPException;
 import com.martiansoftware.jsap.JSAPResult;
 
+import ihmc_msgs.HandDesiredConfigurationRosMessage;
 import us.ihmc.atlas.ros.RosAtlasAuxiliaryRobotDataPublisher;
 import us.ihmc.avatar.drcRobot.DRCRobotModel;
 import us.ihmc.avatar.drcRobot.RobotTarget;
 import us.ihmc.avatar.networkProcessor.DRCNetworkModuleParameters;
 import us.ihmc.avatar.networkProcessor.DRCNetworkProcessor;
 import us.ihmc.avatar.networkProcessor.modules.uiConnector.UiPacketToRosMsgRedirector;
+import us.ihmc.avatar.ros.DRCROSPPSTimestampOffsetProvider;
+import us.ihmc.avatar.ros.subscriber.IHMCMsgToPacketSubscriber;
 import us.ihmc.avatar.rosAPI.ThePeoplesGloriousNetworkProcessor;
 import us.ihmc.communication.configuration.NetworkParameterKeys;
 import us.ihmc.communication.configuration.NetworkParameters;
+import us.ihmc.communication.net.ObjectCommunicator;
 import us.ihmc.communication.packetCommunicator.PacketCommunicator;
+import us.ihmc.communication.packets.PacketDestination;
 import us.ihmc.communication.util.NetworkPorts;
 import us.ihmc.humanoidRobotics.kryo.IHMCCommunicationKryoNetClassList;
 import us.ihmc.robotics.robotSide.RobotSide;
 import us.ihmc.sensorProcessing.communication.packets.dataobjects.RobotConfigurationData;
 import us.ihmc.tools.thread.CloseableAndDisposableRegistry;
 import us.ihmc.utilities.ros.RosMainNode;
+import us.ihmc.utilities.ros.publisher.RosTopicPublisher;
+import us.ihmc.utilities.ros.subscriber.RosTopicSubscriberInterface;
+import us.ihmc.robotiq.control.ROSRobotiqCommandDispatcher;
 import us.ihmc.robotiq.control.RobotiqHandCommandManager;
 
 public class AtlasROSAPINetworkProcessor
@@ -36,8 +54,11 @@ public class AtlasROSAPINetworkProcessor
 
    private static final boolean ENABLE_UI_PACKET_TO_ROS_CONVERTER = true;
    
-   private final RobotiqHandCommandManager leftHandManager;
-   private final RobotiqHandCommandManager rightHandManager;
+//   private final RobotiqHandCommandManager leftHandManager;
+//   private final RobotiqHandCommandManager rightHandManager;
+   
+//   private final PacketCommunicator LeftHandCommunicator;
+//   private final PacketCommunicator RightHandCommunicator;
    
    public AtlasROSAPINetworkProcessor(DRCRobotModel robotModel, String nameSpace, String tfPrefix) throws IOException
    {
@@ -59,12 +80,14 @@ public class AtlasROSAPINetworkProcessor
          if(robotModel.getHandModel() != null) 
          {
         	 networkProcessorParameters.enableHandModule(true);
-        	 leftHandManager = new RobotiqHandCommandManager(RobotSide.LEFT);
-        	 rightHandManager = new RobotiqHandCommandManager(RobotSide.RIGHT);
+//        	 leftHandManager = new RobotiqHandCommandManager(RobotSide.LEFT);
+//        	 rightHandManager = new RobotiqHandCommandManager(RobotSide.RIGHT);
+        	 new Thread(new ROSRobotiqCommandDispatcher ()).start();
+        	 System.out.println("ROSRobotiqCommandDispatcher Thread started");
          }
          else {
-        	 leftHandManager = null;
-        	 rightHandManager = null;
+//        	 leftHandManager = null;
+//        	 rightHandManager = null;
          }
          DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkProcessorParameters);
          new UiPacketToRosMsgRedirector(robotModel, rosUri, rosAPICommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
@@ -80,8 +103,9 @@ public class AtlasROSAPINetworkProcessor
       rosMainNode.execute();
 
       rosAPICommunicator.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
-      
+      		
       new ThePeoplesGloriousNetworkProcessor(rosUri, rosAPICommunicator, robotModel, nameSpace, tfPrefix);
+
    }
    
    public static void main(String[] args) throws JSAPException, IOException
