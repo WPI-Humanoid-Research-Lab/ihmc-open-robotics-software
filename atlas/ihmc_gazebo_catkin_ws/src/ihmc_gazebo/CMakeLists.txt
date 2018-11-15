@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ihmc_gazebo)
+set (CMAKE_CXX_STANDARD 11)
 
 include (FindPkgConfig)
 if (PKG_CONFIG_FOUND)
