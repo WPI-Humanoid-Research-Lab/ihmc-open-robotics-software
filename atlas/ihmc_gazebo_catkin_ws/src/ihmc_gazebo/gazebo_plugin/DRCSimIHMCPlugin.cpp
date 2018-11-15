@@ -97,9 +97,9 @@ public:
         for (unsigned int i = 0; i < imus.size(); i++) {
             sensors::ImuSensorPtr imu = imus.at(i);
 
-            math::Quaternion imuRotation = imu->GetOrientation();
-            math::Vector3 angularVelocity = imu->GetAngularVelocity();
-            math::Vector3 linearAcceleration = imu->GetLinearAcceleration();
+            math::Quaternion imuRotation = imu->Orientation();
+            math::Vector3 angularVelocity = imu->AngularVelocity();
+            math::Vector3 linearAcceleration = imu->LinearAcceleration();
 
             data.put(imuRotation.w);
             data.put(imuRotation.x);
@@ -155,7 +155,7 @@ public:
 
         sensors::Sensor_V sensors = sensors::SensorManager::Instance()->GetSensors();
         for (unsigned int i = 0; i < sensors.size(); i++) {
-            gazebo::sensors::ImuSensorPtr imu = boost::dynamic_pointer_cast<gazebo::sensors::ImuSensor>(sensors.at(i));
+            gazebo::sensors::ImuSensorPtr imu = std::dynamic_pointer_cast<gazebo::sensors::ImuSensor>(sensors.at(i));
             if (imu) {
                 if (imu->GetParentName() == "atlas::pelvis") {
                     imus.push_back(imu);
