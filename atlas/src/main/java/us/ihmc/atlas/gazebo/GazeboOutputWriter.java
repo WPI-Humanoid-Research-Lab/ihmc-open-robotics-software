@@ -10,9 +10,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 
+import us.ihmc.avatar.SimulatedLowLevelOutputWriter;
 import us.ihmc.avatar.drcRobot.DRCRobotModel;
 import us.ihmc.commons.thread.ThreadTools;
 import us.ihmc.robotModels.FullHumanoidRobotModel;
@@ -20,7 +22,9 @@ import us.ihmc.robotics.robotSide.RobotSide;
 import us.ihmc.robotics.robotSide.SideDependentList;
 import us.ihmc.robotics.screwTheory.OneDoFJoint;
 import us.ihmc.robotics.sensors.ForceSensorDataHolderReadOnly;
+import us.ihmc.sensorProcessing.outputData.JointDesiredOutput;
 import us.ihmc.sensorProcessing.outputData.JointDesiredOutputList;
+import us.ihmc.sensorProcessing.outputData.JointDesiredOutputWriter;
 import us.ihmc.sensorProcessing.sensors.RawJointSensorDataHolderMap;
 import us.ihmc.simulationconstructionset.OneDegreeOfFreedomJoint;
 import us.ihmc.wholeBodyController.DRCOutputProcessor;
@@ -37,20 +41,26 @@ public class GazeboOutputWriter implements DRCOutputProcessor
    private final int estimatorTicksPerControlTick;
    private final int estimatorFrequencyInHz;
    private final ArrayList<OneDoFJoint> joints = new ArrayList<>();
+   private JointDesiredOutputList outputList;
+   private RawJointSensorDataHolderMap rawJointMap;
    private ByteBuffer jointCommand;
+   
 
-   // Since the finger joint controller doesn't set the OneDoFJoints used in this writer, this acts as an object communicator for finger joint angles
+// Since the finger joint controller doesn't set the OneDoFJoints used in this writer, this acts as an object communicator for finger joint angles
    private HashMap<String, OneDegreeOfFreedomJoint> fingerJointMap = null;
 
    public GazeboOutputWriter(DRCRobotModel robotModel)
    {
       estimatorTicksPerControlTick = (int) Math.round(robotModel.getControllerDT() / robotModel.getEstimatorDT());
       estimatorFrequencyInHz = (int) (1.0 / robotModel.getEstimatorDT());
+      
    }
 
    @Override
    public void initialize()
    {
+//	   connect();
+	   System.out.println("GazeboOutputWriter initialized");
    }
 
    @Override
@@ -69,9 +79,19 @@ public class GazeboOutputWriter implements DRCOutputProcessor
          if (fingerJointMap == null || !fingerJointMap.containsKey(joint.getName()))
          {
             if (joint.isUnderPositionControl())
-               jointCommand.putDouble(joint.getqDesired());               
+            {
+//               jointCommand.putDouble(joint.getqDesired());
+            	jointCommand.putDouble(outputList.getJointDesiredOutput(joint).getDesiredPosition());
+//            	jointCommand.putDouble(rawJointMap.get(joint).getQ_raw());
+            	System.out.println("Joint : "+joint.getName() + " model q:"+joint.getqDesired()+" output q:"+outputList.getJointDesiredOutput(joint).getDesiredPosition() +" raw q:"+rawJointMap.get(joint).getQ_raw());
+            }
             else
-               jointCommand.putDouble(joint.getTau());
+            {
+//               jointCommand.putDouble(joint.getTau());
+            	jointCommand.putDouble(outputList.getJointDesiredOutput(joint).getDesiredTorque());
+//            	jointCommand.putDouble(rawJointMap.get(joint).getF_raw());
+            	System.out.println("Joint : "+joint.getName() + " model t:"+joint.getTau()+" output t:"+outputList.getJointDesiredOutput(joint).getDesiredTorque() +" raw f:"+rawJointMap.get(joint).getF_raw());
+            }
          }
          else
             jointCommand.putDouble(fingerJointMap.get(joint.getName()).getqDesired()); // fingers are always position controlled
@@ -91,7 +111,7 @@ public class GazeboOutputWriter implements DRCOutputProcessor
          e.printStackTrace();
       }
    }
-
+   
    public void setFingerJointsProvider(SideDependentList<List<OneDegreeOfFreedomJoint>> allFingerJoints)
    {
       fingerJointMap = new HashMap<String, OneDegreeOfFreedomJoint>();
@@ -108,6 +128,10 @@ public class GazeboOutputWriter implements DRCOutputProcessor
    @Override
    public void setLowLevelControllerCoreOutput(FullHumanoidRobotModel controllerRobotModel, JointDesiredOutputList lowLevelControllerCoreOutput, RawJointSensorDataHolderMap rawJointSensorDataHolderMap)
    {
+      outputList = lowLevelControllerCoreOutput;
+      rawJointMap = rawJointSensorDataHolderMap;
+//      controllerRobotModel.getOneDoFJoints(joints);
+      joints.clear();
       joints.addAll(Arrays.asList(controllerRobotModel.getOneDoFJoints()));
       Collections.sort(joints, new Comparator<OneDoFJoint>()
       {
