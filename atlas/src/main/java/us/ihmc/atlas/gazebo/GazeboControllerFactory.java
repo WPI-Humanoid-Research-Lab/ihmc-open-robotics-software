@@ -12,9 +12,11 @@ import com.martiansoftware.jsap.JSAPResult;
 
 import us.ihmc.atlas.AtlasRobotModel;
 import us.ihmc.atlas.AtlasRobotModelFactory;
+import us.ihmc.atlas.AtlasRobotVersion;
 import us.ihmc.atlas.parameters.AtlasSensorInformation;
 import us.ihmc.atlas.ros.RosAtlasAuxiliaryRobotDataPublisher;
 import us.ihmc.avatar.DRCEstimatorThread;
+import us.ihmc.avatar.SimulatedLowLevelOutputWriter;
 import us.ihmc.avatar.drcRobot.DRCRobotModel;
 import us.ihmc.avatar.drcRobot.RobotTarget;
 import us.ihmc.commonWalkingControlModules.configurations.HighLevelControllerParameters;
@@ -27,6 +29,8 @@ import us.ihmc.communication.configuration.NetworkParameterKeys;
 import us.ihmc.communication.configuration.NetworkParameters;
 import us.ihmc.communication.packetCommunicator.PacketCommunicator;
 import us.ihmc.communication.util.NetworkPorts;
+import us.ihmc.euclid.tuple3D.Point3D;
+import us.ihmc.euclid.tuple4D.Quaternion;
 import us.ihmc.humanoidRobotics.communication.packets.StampedPosePacket;
 import us.ihmc.humanoidRobotics.communication.packets.dataobjects.HighLevelControllerName;
 import us.ihmc.humanoidRobotics.communication.streamingData.HumanoidGlobalDataProducer;
@@ -37,7 +41,10 @@ import us.ihmc.robotDataLogger.RobotVisualizer;
 import us.ihmc.robotDataLogger.YoVariableServer;
 import us.ihmc.robotics.robotSide.SideDependentList;
 import us.ihmc.sensorProcessing.communication.packets.dataobjects.RobotConfigurationData;
+import us.ihmc.sensorProcessing.outputData.JointDesiredOutputWriter;
 import us.ihmc.sensorProcessing.stateEstimation.StateEstimatorParameters;
+import us.ihmc.simulationconstructionset.HumanoidFloatingRootJointRobot;
+import us.ihmc.simulationconstructionset.UnreasonableAccelerationException;
 import us.ihmc.tools.thread.CloseableAndDisposableRegistry;
 import us.ihmc.util.PeriodicNonRealtimeThreadScheduler;
 import us.ihmc.util.PeriodicNonRealtimeThreadSchedulerFactory;
@@ -67,14 +74,15 @@ public class GazeboControllerFactory
 	private static String nodeName = "/robot_data";
 	private static final double gravity = -9.81;
 	private final PacketCommunicator controllerPacketCommunicator;
+	private final HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot ;
 	
-	public GazeboControllerFactory(DRCRobotModel robotModel, String nameSpace, String robotName, String tfPrefix) throws URISyntaxException, IOException
+	public GazeboControllerFactory(GazeboAtlasRobotModel robotModel, String nameSpace, String robotName, String tfPrefix) throws URISyntaxException, IOException
 	{
 		/*
 		 * Create registries
 		 */
 		sensorInformation =(AtlasSensorInformation) robotModel.getSensorInformation();
-
+		humanoidFloatingRootJointRobot = robotModel.getHumanoidFloatingRootJointRobot();
 
 		/*
 		 * Create network servers/clients
@@ -84,7 +92,7 @@ public class GazeboControllerFactory
 				robotModel.getLogSettings(), robotModel.getEstimatorDT());
 		RobotVisualizer robotVisualizer = yoVariableServer;
 		HumanoidGlobalDataProducer dataProducer = new HumanoidGlobalDataProducer(controllerPacketCommunicator);
-//		      BehaviorStatusProducer atlasBehaviorStatusProducer = new BehaviorStatusProducer(dataProducer);
+		//		      BehaviorStatusProducer atlasBehaviorStatusProducer = new BehaviorStatusProducer(dataProducer);
 
 		/*
 		 * Create controllers
@@ -101,7 +109,8 @@ public class GazeboControllerFactory
 		/*
 		 * Create output writer
 		 */
-		GazeboOutputWriter gazeboOutputWriter = new GazeboOutputWriter(robotModel);
+		DRCOutputProcessor outputProcessor = robotModel.getCustomSimulationOutputProcessor(humanoidFloatingRootJointRobot);
+		JointDesiredOutputWriter outputWriter = robotModel.getCustomSimulationOutputWriter(humanoidFloatingRootJointRobot);
 
 		PelvisPoseCorrectionCommunicatorInterface externalPelvisPoseSubscriber = new PelvisPoseCorrectionCommunicator(dataProducer);
 		dataProducer.attachListener(StampedPosePacket.class, externalPelvisPoseSubscriber);
@@ -110,23 +119,45 @@ public class GazeboControllerFactory
 		 * Build controller
 		 */
 		ThreadDataSynchronizer threadDataSynchronizer = new ThreadDataSynchronizer(robotModel);
-		DRCEstimatorThread estimatorThread = new DRCEstimatorThread(robotModel.getSensorInformation(), robotModel.getContactPointParameters(),robotModel,
-				robotModel.getStateEstimatorParameters(), sensorReaderFactory, threadDataSynchronizer, new PeriodicNonRealtimeThreadScheduler( "DRCPoseCommunicator"), dataProducer,null, robotVisualizer, gravity);
+		
+		DRCEstimatorThread estimatorThread = new DRCEstimatorThread(sensorInformation, robotModel.getContactPointParameters(),robotModel,
+				robotModel.getStateEstimatorParameters(), sensorReaderFactory, threadDataSynchronizer, new PeriodicNonRealtimeThreadScheduler( "DRCSimGazeboYoVariableServer"), 
+				dataProducer, outputWriter , robotVisualizer, gravity);
 		estimatorThread.setExternalPelvisCorrectorSubscriber(externalPelvisPoseSubscriber);
-		DRCControllerThread controllerThread = new DRCControllerThread(robotModel, robotModel.getSensorInformation(), controllerFactory, threadDataSynchronizer,
-				gazeboOutputWriter, dataProducer, robotVisualizer, gravity, robotModel.getEstimatorDT());
+		
+		try
+		{
+			humanoidFloatingRootJointRobot.update();
+			humanoidFloatingRootJointRobot.doDynamicsButDoNotIntegrate();
+			humanoidFloatingRootJointRobot.update();
+		}
+		catch (UnreasonableAccelerationException e)
+		{
+			throw new RuntimeException("UnreasonableAccelerationException");
+		}
 
+		Point3D initialCoMPosition = new Point3D();
+		humanoidFloatingRootJointRobot.computeCenterOfMass(initialCoMPosition);
+
+		Quaternion initialEstimationLinkOrientation = new Quaternion();
+		humanoidFloatingRootJointRobot.getRootJoint().getJointTransform3D().getRotation(initialEstimationLinkOrientation);
+
+		estimatorThread.initializeEstimatorToActual(initialCoMPosition, initialEstimationLinkOrientation);
+
+		DRCControllerThread controllerThread = new DRCControllerThread(robotModel, sensorInformation, controllerFactory, threadDataSynchronizer,
+				outputProcessor, dataProducer, robotVisualizer, gravity, robotModel.getEstimatorDT());
 
 		/*
 		 * Setup threads
 		 */
-		GazeboThreadedRobotController robotController = new GazeboThreadedRobotController();
+		GazeboThreadedRobotController robotController = new GazeboThreadedRobotController(humanoidFloatingRootJointRobot);
 		int estimatorTicksPerSimulationTick = (int) Math.round(robotModel.getEstimatorDT() / robotModel.getEstimatorDT());
 		int controllerTicksPerSimulationTick = (int) Math.round(robotModel.getControllerDT() / robotModel.getEstimatorDT());
 
-		robotController.addController(estimatorThread, estimatorTicksPerSimulationTick, false);
 		robotController.addController(controllerThread, controllerTicksPerSimulationTick, true);
-
+		robotController.addController(estimatorThread, estimatorTicksPerSimulationTick, false);
+		
+		humanoidFloatingRootJointRobot.setController(robotController);
 		try
 		{
 			controllerPacketCommunicator.connect();
@@ -146,17 +177,14 @@ public class GazeboControllerFactory
 		networkModuleParams.enableControllerCommunicator(true);
 		networkModuleParams.enableBehaviorModule(true);
 		networkModuleParams.enableBehaviorVisualizer(true);
-		
-
-		CloseableAndDisposableRegistry closeableAndDisposableRegistry = new CloseableAndDisposableRegistry();
 
 		DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkModuleParams);
 
 		PacketCommunicator rosCommunicator = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.ROS_API_COMMUNICATOR, new IHMCCommunicationKryoNetClassList());
-		
+
 		new UiPacketToRosMsgRedirector(robotModel, rosURI, rosCommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
-		
-        
+
+
 		RosMainNode rosMainNode = new RosMainNode(rosURI, nameSpace + nodeName);
 		RosAtlasAuxiliaryRobotDataPublisher auxiliaryRobotDataPublisher = new RosAtlasAuxiliaryRobotDataPublisher(rosMainNode, nameSpace);
 		rosMainNode.execute();
@@ -164,13 +192,13 @@ public class GazeboControllerFactory
 		rosCommunicator.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
 
 		new ThePeoplesGloriousNetworkProcessor(rosURI, rosCommunicator, robotModel, nameSpace, tfPrefix);
-		
+
 		yoVariableServer.start();
-		
-		gazeboOutputWriter.connect();
-		
+
+		robotModel.connectOutputProcessor();
+
 		sensorReaderFactory.getSensorReader().connect();
-		
+
 		Thread simulationThread = new Thread(robotController);
 		simulationThread.start();
 
@@ -221,6 +249,7 @@ public class GazeboControllerFactory
 	//      return controllerFactory;
 	//   }
 
+
 	private static HighLevelHumanoidControllerFactory createDRCControllerFactory(AtlasSensorInformation sensorInformation, DRCRobotModel robotModel, PacketCommunicator packetCommunicator)
 	{
 		ContactableBodiesFactory contactableBodiesFactory = robotModel.getContactPointParameters().getContactableBodiesFactory();
@@ -241,7 +270,7 @@ public class GazeboControllerFactory
 
 		controllerFactory.addRequestableTransition(HighLevelControllerName.DO_NOTHING_BEHAVIOR, HighLevelControllerName.WALKING);
 		controllerFactory.addRequestableTransition(HighLevelControllerName.WALKING, HighLevelControllerName.DO_NOTHING_BEHAVIOR);
-		controllerFactory.setInitialState(highLevelControllerParameters.getDefaultInitialControllerState());
+		controllerFactory.setInitialState(HighLevelControllerName.WALKING);
 
 		if (walkingProvider == WalkingProvider.VELOCITY_HEADING_COMPONENT)
 		{
@@ -254,43 +283,20 @@ public class GazeboControllerFactory
 
 	public static void main(String args[]) throws JSAPException, IOException
 	{
-		JSAP jsap = new JSAP();
-
-		FlaggedOption robotModel = new FlaggedOption("robotModel").setLongFlag("model").setShortFlag('m').setRequired(true).setStringParser(JSAP.STRING_PARSER);
-
-		robotModel.setHelp("Robot models: " + Arrays.toString(AtlasRobotModelFactory.getAvailableRobotModels()));
-		jsap.registerParameter(robotModel);
-
-		JSAPResult config = jsap.parse(args);
-
-		if (config.success())
+		try
 		{
-			try
-			{
-
-				AtlasRobotModel model = AtlasRobotModelFactory.createDRCRobotModel(config.getString("robotModel"), RobotTarget.GAZEBO, true);
-
-
-				new GazeboControllerFactory(model, "ihmc_ros", "atlas", null);
-			}
-			catch (IllegalArgumentException e)
-			{
-				System.err.println("Incorrect robot model " + config.getString("robotModel"));
-				System.out.println(jsap.getHelp());
-
-			} catch (URISyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			GazeboAtlasRobotModel model = new GazeboAtlasRobotModel(AtlasRobotVersion.ATLAS_UNPLUGGED_V5_NO_HANDS);
+			new GazeboControllerFactory(model, "ihmc_ros", "atlas", null);
 		}
-		else
+		catch (IllegalArgumentException e)
 		{
-			for (java.util.Iterator<?> errs = config.getErrorMessageIterator(); errs.hasNext();)
-			{
-				System.err.println("Error: " + errs.next());
-			}
-			System.out.println(jsap.getHelp());
+			e.printStackTrace();
+
+		} catch (URISyntaxException e) 
+		{
+			e.printStackTrace();
 		}
+
 
 	}
 }
