@@ -92,6 +92,9 @@ public:
             physics::JointPtr joint = joints.at(i);
             data.put(joint->GetAngle(0).Radian());
             data.put(joint->GetVelocity(0));
+//            ROS_INFO("Sending... [%s] angle:%.2f vel:%.2f", joint->GetName().c_str(),
+//                                                            joint->GetAngle(0).Radian(),
+//                                                            joint->GetVelocity(0));
         }
 
         for (unsigned int i = 0; i < imus.size(); i++) {
@@ -184,13 +187,13 @@ public:
         		continue;
         	}
 
-        	std::string keyRoot = "atlas/" + joints.at(i)->GetName();
+            std::string keyRoot = "atlas/" + joints.at(i)->GetName() + "_effort_controller";
             double initialAngle;
             std::string initAngleKey = keyRoot + "/initial_angle";
             this->rosNode->getParam(initAngleKey, initialAngle);
 
             std::string controlMode;
-            std::string ctrlModeKey = keyRoot + "/control_mode";
+            std::string ctrlModeKey = keyRoot + "/type";
             this->rosNode->getParam(ctrlModeKey, controlMode);
             this->jointControlModes[i] = controlMode;
 
@@ -204,6 +207,7 @@ public:
             	this->rosNode->getParam(keyRoot + "/pid/cmdMax", cmdMax);
             	this->rosNode->getParam(keyRoot + "/pid/cmdMin", cmdMin);
                 jointController->SetPositionPID(J->first, common::PID(p, i, d, imax, imin, cmdMax, cmdMin));
+
             }
 
             joints.at(i)->SetPosition(0, initialAngle);
@@ -222,21 +226,28 @@ public:
         boost::unique_lock<boost::mutex> lock(robotControlLock);
         {
         	if(!initialized) {
-        		if(!receivedHandshake) {
+                if(!receivedHandshake)
+                {
         			// wait for controller to connect
-        		} else {
+                }
+                else
+                {
         			std::cout << "Unlocking joints. Starting control." << std::endl;
 
-        			for(int j = 0; j < NUM_MSGS_TO_CONTROLLER_AFTER_HANDSHAKE; j++) {
+                    for(int j = 0; j < NUM_MSGS_TO_CONTROLLER_AFTER_HANDSHAKE; j++)
+                    {
             			DRCSimIHMCPlugin::SendDataToController(0);
         			}
 
-        			while(!receivedControlMessage) {
+                    while(!receivedControlMessage)
+                    {
         				condition.wait(lock);
         			}
 
-                    for (unsigned int i = 0; i < joints.size(); i++) {
-                        if(jointControlModes[i] == "torque")
+                    for (unsigned int i = 0; i < joints.size(); i++)
+                    {
+//                        if(jointControlModes[i] == "torque")
+                      if(jointControlModes[i] == "effort_controllers/joint_effort_controller")
                         {
                             joints.at(i)->SetLowerLimit(0, -3.14);
                             joints.at(i)->SetUpperLimit(0, 3.14);
@@ -253,7 +264,8 @@ public:
 
             if (cyclesRemainingTillControlMessage == 0) {
                 // Block for control message
-                while (!receivedControlMessage) {
+                while (!receivedControlMessage)
+                {
                     condition.wait(lock);
                 }
                 cyclesRemainingTillControlMessage = simulationCyclesPerControlCycle;
@@ -262,11 +274,20 @@ public:
 
             int i = 0;
             std::map< std::string, physics::JointPtr > jointsByName = jointController->GetJoints();
-            for (std::map< std::string, physics::JointPtr>::iterator J = jointsByName.begin(); J != jointsByName.end(); J++) {
-            	if(jointControlModes[i] == "pid")
+            for (std::map< std::string, physics::JointPtr>::iterator J = jointsByName.begin(); J != jointsByName.end(); J++)
+            {
+//                ROS_INFO("%s jointControlModes %s",joints.at(i)->GetName().c_str(),jointControlModes[i].c_str());
+                if(jointControlModes[i] == "pid")
+                {
+
             		jointController->SetPositionTarget(J->first, desiredPositionsOrTorques[i]);
-            	else if(jointControlModes[i] == "torque")
+                }
+//                else if(jointControlModes[i] == "torque")
+                else if(jointControlModes[i] == "effort_controllers/joint_effort_controller")
+                {
                     joints.at(i)->SetForce(0, desiredPositionsOrTorques[i]);
+                }
+
             	i++;
             }
 
@@ -282,9 +303,12 @@ public:
 
     void readControlMessage(char* buffer, std::size_t bytes_transffered)
     {
-    	if(!receivedHandshake) {
+        if(!receivedHandshake)
+        {
     		receivedHandshake = true;
-    	} else {
+        }
+        else
+        {
             boost::unique_lock<boost::mutex> lock(robotControlLock);
             {
                 int64_t* longBuffer = ((int64_t*) (buffer));
@@ -297,8 +321,11 @@ public:
 
                 double* jointPositionsOrTorques = (double*) (buffer + 24);
 
-                for (unsigned int i = 0; i < joints.size(); i++) {
+//                ROS_INFO("-");
+                for (unsigned int i = 0; i < joints.size(); i++)
+                {
                     desiredPositionsOrTorques[i] = jointPositionsOrTorques[i];
+//                    ROS_INFO("Receiving... [%s] desiredPositionsOrTorques : %f",joints[i]->GetName().c_str(), desiredPositionsOrTorques[i]);
                 }
 
                 receivedControlMessage = true;

@@ -9,7 +9,8 @@
   <param name="/atlas/time_to_unpin" type="double" value="0.5"/>
   <param name="/atlas/startup_mode" type="string" value="standing"/>
   
-  <rosparam file="$(find ihmc_gazebo)/yaml/standing_config.yaml" command="load"/>
+  <!-- <rosparam file="$(find ihmc_gazebo)/yaml/standing_config.yaml" command="load"/> -->
+  <rosparam file="$(find ihmc_gazebo)/yaml/effort_controller_config.yaml" command="load"/>
   
   <!-- start gazebo with the Atlas -->
   <include file="$(find ihmc_gazebo)/launch/atlas_no_controllers.launch">
