@@ -190,8 +190,8 @@ public class GazeboControllerFactory
 		rosMainNode.execute();
 
 		rosCommunicator.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
-
-		new ThePeoplesGloriousNetworkProcessor(rosURI, rosCommunicator, robotModel, nameSpace, tfPrefix);
+		
+		new ThePeoplesGloriousNetworkProcessor(rosURI, rosCommunicator, robotModel, defaultRosNameSpace, tfPrefix);
 
 		yoVariableServer.start();
 
