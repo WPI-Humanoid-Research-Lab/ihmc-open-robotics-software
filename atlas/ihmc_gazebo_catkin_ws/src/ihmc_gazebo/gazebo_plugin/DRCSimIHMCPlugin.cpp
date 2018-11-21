@@ -5,9 +5,9 @@
 #include <boost/thread/condition_variable.hpp>
 
 #include <gazebo/physics/PhysicsTypes.hh>
-#include <gazebo/math/Angle.hh>
-#include <gazebo/math/Vector3.hh>
-#include <gazebo/math/Quaternion.hh>
+#include <ignition/math/Angle.hh>
+#include <ignition/math/Vector3.hh>
+#include <ignition/math/Quaternion.hh>
 
 #include <gazebo/sensors/ForceTorqueSensor.hh>
 #include <gazebo/sensors/SensorManager.hh>
@@ -82,7 +82,7 @@ public:
 
     void SendDataToController(int64_t localLastReceivedTimestamp) {
         ByteBuffer data;
-        gazebo::common::Time time = this->model->GetWorld()->GetSimTime();
+        gazebo::common::Time time = this->model->GetWorld()->SimTime();
         uint64_t timeStamp = (uint64_t) time.sec * 1000000000ull + (uint64_t) time.nsec;
 
         data.put(timeStamp);
@@ -90,7 +90,7 @@ public:
 
         for (unsigned int i = 0; i < joints.size(); i++) {
             physics::JointPtr joint = joints.at(i);
-            data.put(joint->GetAngle(0).Radian());
+            data.put(joint->Position());
             data.put(joint->GetVelocity(0));
 //            ROS_INFO("Sending... [%s] angle:%.2f vel:%.2f", joint->GetName().c_str(),
 //                                                            joint->GetAngle(0).Radian(),
@@ -100,34 +100,34 @@ public:
         for (unsigned int i = 0; i < imus.size(); i++) {
             sensors::ImuSensorPtr imu = imus.at(i);
 
-            math::Quaternion imuRotation = imu->Orientation();
-            math::Vector3 angularVelocity = imu->AngularVelocity();
-            math::Vector3 linearAcceleration = imu->LinearAcceleration();
+            ignition::math::Quaterniond imuRotation = imu->Orientation();
+            ignition::math::Vector3d angularVelocity = imu->AngularVelocity();
+            ignition::math::Vector3d linearAcceleration = imu->LinearAcceleration();
 
-            data.put(imuRotation.w);
-            data.put(imuRotation.x);
-            data.put(imuRotation.y);
-            data.put(imuRotation.z);
+            data.put(imuRotation.W());
+            data.put(imuRotation.X());
+            data.put(imuRotation.Y());
+            data.put(imuRotation.Z());
 
-            data.put(angularVelocity.x);
-            data.put(angularVelocity.y);
-            data.put(angularVelocity.z);
+            data.put(angularVelocity.X());
+            data.put(angularVelocity.Y());
+            data.put(angularVelocity.Z());
 
-            data.put(linearAcceleration.x);
-            data.put(linearAcceleration.y);
-            data.put(linearAcceleration.z);
+            data.put(linearAcceleration.X());
+            data.put(linearAcceleration.Y());
+            data.put(linearAcceleration.Z());
         }
 
         for (unsigned int i = 0; i < 4; i++) {
             gazebo::physics::JointWrench wrench = forceSensors.at(i)->GetForceTorque((unsigned int) 0);
 
-            data.put(wrench.body2Torque.x);
-            data.put(wrench.body2Torque.y);
-            data.put(wrench.body2Torque.z);
+            data.put(wrench.body2Torque.X());
+            data.put(wrench.body2Torque.Y());
+            data.put(wrench.body2Torque.Z());
 
-            data.put(wrench.body2Force.x);
-            data.put(wrench.body2Force.y);
-            data.put(wrench.body2Force.z);
+            data.put(wrench.body2Force.X());
+            data.put(wrench.body2Force.Y());
+            data.put(wrench.body2Force.Z());
         }
 
         if(this->modulusCounter >= this->tcpSendModulus)
@@ -146,7 +146,7 @@ public:
     void Load(physics::ModelPtr _parent, sdf::ElementPtr sdf) {
         this->model = _parent;
 
-        this->gzPhysicsTimeStep = model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
+        this->gzPhysicsTimeStep = model->GetWorld()->Physics()->GetMaxStepSize();
         this->tcpSendModulus = (int)((1.0 / (this->gzPhysicsTimeStep * 1e3)) + 0.5);
         this->modulusCounter = 3;
 
@@ -160,7 +160,7 @@ public:
         for (unsigned int i = 0; i < sensors.size(); i++) {
             gazebo::sensors::ImuSensorPtr imu = std::dynamic_pointer_cast<gazebo::sensors::ImuSensor>(sensors.at(i));
             if (imu) {
-                if (imu->GetParentName() == "atlas::pelvis") {
+                if (imu->ParentName() == "atlas::pelvis") {
                     imus.push_back(imu);
                 }
             }

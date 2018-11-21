@@ -10,9 +10,10 @@ endif()
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS 
   roscpp 
-  gazebo_ros 
+  gazebo_ros gazebo_plugins
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
 find_package(Boost REQUIRED system thread)
 
@@ -21,7 +22,7 @@ find_package(gazebo REQUIRED)
 
 link_directories(${GAZEBO_LIBRARY_DIRS})
 #message("Gazebo includes: ${GAZEBO_INCLUDE_DIRS}")
-include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS}/gazebo-9 ${GAZEBO_INCLUDE_DIRS})
  
 #add_library(${PROJECT_NAME} src/.cpp)
 #target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
