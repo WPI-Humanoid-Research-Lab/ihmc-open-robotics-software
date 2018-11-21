@@ -9,7 +9,6 @@ import us.ihmc.wholeBodyController.DRCOutputProcessor;
 public class GazeboAtlasRobotModel extends AtlasRobotModel {
 	
 	private final GazeboOutputWriter gazeboOutputProcessor;
-//	private final JointDesiredOutputWriter jointDesiredOutputWriter;
 	private final HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot;
 	
 	public GazeboAtlasRobotModel(AtlasRobotVersion atlasVersion) {

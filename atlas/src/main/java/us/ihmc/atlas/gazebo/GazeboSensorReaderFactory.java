@@ -62,6 +62,12 @@ public class GazeboSensorReaderFactory implements SensorReaderFactory
       return atlasSensorReader;
    }
 
+   public void connectSensorReader() {
+	   if(!atlasSensorReader.isConnected())
+	   {
+		   atlasSensorReader.connect();
+	   }
+   }
    public StateEstimatorSensorDefinitions getStateEstimatorSensorDefinitions()
    {
       return stateEstimatorSensorDefinitions;
@@ -71,15 +77,5 @@ public class GazeboSensorReaderFactory implements SensorReaderFactory
    {
       return true;
    }
-//
-//@Override
-//public void build(FloatingInverseDynamicsJoint rootJoint, IMUDefinition[] imuDefinitions,
-//		ForceSensorDefinition[] forceSensorDefinitions, ContactSensorHolder contactSensorHolder,
-//		RawJointSensorDataHolderMap rawJointSensorDataHolderMap, JointDesiredOutputList estimatorDesiredJointDataHolder,
-//		YoVariableRegistry parentRegistry) {
-//	// TODO Auto-generated method stub
-//	
-//}
-
 
 }

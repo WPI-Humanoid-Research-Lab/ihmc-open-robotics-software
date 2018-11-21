@@ -80,17 +80,11 @@ public class GazeboOutputWriter implements DRCOutputProcessor
          {
             if (joint.isUnderPositionControl())
             {
-//               jointCommand.putDouble(joint.getqDesired());
             	jointCommand.putDouble(outputList.getJointDesiredOutput(joint).getDesiredPosition());
-//            	jointCommand.putDouble(rawJointMap.get(joint).getQ_raw());
-            	System.out.println("Joint : "+joint.getName() + " model q:"+joint.getqDesired()+" output q:"+outputList.getJointDesiredOutput(joint).getDesiredPosition() +" raw q:"+rawJointMap.get(joint).getQ_raw());
             }
             else
             {
-//               jointCommand.putDouble(joint.getTau());
             	jointCommand.putDouble(outputList.getJointDesiredOutput(joint).getDesiredTorque());
-//            	jointCommand.putDouble(rawJointMap.get(joint).getF_raw());
-            	System.out.println("Joint : "+joint.getName() + " model t:"+joint.getTau()+" output t:"+outputList.getJointDesiredOutput(joint).getDesiredTorque() +" raw f:"+rawJointMap.get(joint).getF_raw());
             }
          }
          else

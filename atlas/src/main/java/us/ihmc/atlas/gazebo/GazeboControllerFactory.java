@@ -62,112 +62,117 @@ import us.ihmc.avatar.rosAPI.ThePeoplesGloriousNetworkProcessor;
 public class GazeboControllerFactory
 {
 
-	private static final boolean INTEGRATE_ACCELERATIONS_AND_CONTROL_VELOCITIES = true;
-
 	private static final WalkingProvider walkingProvider = WalkingProvider.DATA_PRODUCER;
 
-	//	private static final boolean USE_GUI = true;
-
-	private final AtlasSensorInformation sensorInformation;
 	private static String defaultRosNameSpace = "/ihmc_ros/atlas";
-
 	private static String nodeName = "/robot_data";
 	private static final double gravity = -9.81;
-	private final PacketCommunicator controllerPacketCommunicator;
-	private final HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot ;
-	
-	public GazeboControllerFactory(GazeboAtlasRobotModel robotModel, String nameSpace, String robotName, String tfPrefix) throws URISyntaxException, IOException
+	private final PacketCommunicator controllerPacketCommunicationServer;
+	private final PacketCommunicator rosCommunicationServer;
+	private final YoVariableServer yoVariableServer;
+	private final Thread simulationThread;
+	private GazeboSensorReaderFactory sensorReaderFactory;
+	private final HumanoidGlobalDataProducer dataProducer;
+
+	public Thread getSimulationThread() {
+		return simulationThread;
+	}
+
+
+
+	public GazeboControllerFactory(GazeboAtlasRobotModel robotModel, String nameSpace, String robotName, String tfPrefix) throws IOException
 	{
-		/*
-		 * Create registries
-		 */
-		sensorInformation =(AtlasSensorInformation) robotModel.getSensorInformation();
-		humanoidFloatingRootJointRobot = robotModel.getHumanoidFloatingRootJointRobot();
+		HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot = robotModel.getHumanoidFloatingRootJointRobot();
 
-		/*
-		 * Create network servers/clients
-		 */
-		controllerPacketCommunicator = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.CONTROLLER_PORT, new IHMCCommunicationKryoNetClassList());
-		YoVariableServer yoVariableServer = new YoVariableServer(getClass(), new PeriodicNonRealtimeThreadSchedulerFactory(), robotModel.getLogModelProvider(),
-				robotModel.getLogSettings(), robotModel.getEstimatorDT());
-		RobotVisualizer robotVisualizer = yoVariableServer;
-		HumanoidGlobalDataProducer dataProducer = new HumanoidGlobalDataProducer(controllerPacketCommunicator);
-		//		      BehaviorStatusProducer atlasBehaviorStatusProducer = new BehaviorStatusProducer(dataProducer);
+		controllerPacketCommunicationServer = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.CONTROLLER_PORT, 
+				new IHMCCommunicationKryoNetClassList());
+		rosCommunicationServer = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.ROS_API_COMMUNICATOR, new IHMCCommunicationKryoNetClassList());
 
-		/*
-		 * Create controllers
-		 */
-		HighLevelHumanoidControllerFactory controllerFactory = createDRCControllerFactory(sensorInformation, robotModel, controllerPacketCommunicator);
+		yoVariableServer = new YoVariableServer(getClass(), new PeriodicNonRealtimeThreadSchedulerFactory(), 
+				robotModel.getLogModelProvider(),robotModel.getLogSettings(), robotModel.getEstimatorDT());
 
-		/*
-		 * Create sensors
-		 */
-		StateEstimatorParameters stateEstimatorParameters = robotModel.getStateEstimatorParameters();
-
-		GazeboSensorReaderFactory sensorReaderFactory = new GazeboSensorReaderFactory(sensorInformation, stateEstimatorParameters);
-
-		/*
-		 * Create output writer
-		 */
-		DRCOutputProcessor outputProcessor = robotModel.getCustomSimulationOutputProcessor(humanoidFloatingRootJointRobot);
-		JointDesiredOutputWriter outputWriter = robotModel.getCustomSimulationOutputWriter(humanoidFloatingRootJointRobot);
-
-		PelvisPoseCorrectionCommunicatorInterface externalPelvisPoseSubscriber = new PelvisPoseCorrectionCommunicator(dataProducer);
-		dataProducer.attachListener(StampedPosePacket.class, externalPelvisPoseSubscriber);
-
-		/*
-		 * Build controller
-		 */
-		ThreadDataSynchronizer threadDataSynchronizer = new ThreadDataSynchronizer(robotModel);
-		
-		DRCEstimatorThread estimatorThread = new DRCEstimatorThread(sensorInformation, robotModel.getContactPointParameters(),robotModel,
-				robotModel.getStateEstimatorParameters(), sensorReaderFactory, threadDataSynchronizer, new PeriodicNonRealtimeThreadScheduler( "DRCSimGazeboYoVariableServer"), 
-				dataProducer, outputWriter , robotVisualizer, gravity);
-		estimatorThread.setExternalPelvisCorrectorSubscriber(externalPelvisPoseSubscriber);
-		
-		try
-		{
-			humanoidFloatingRootJointRobot.update();
-			humanoidFloatingRootJointRobot.doDynamicsButDoNotIntegrate();
-			humanoidFloatingRootJointRobot.update();
-		}
-		catch (UnreasonableAccelerationException e)
-		{
-			throw new RuntimeException("UnreasonableAccelerationException");
-		}
-
-		Point3D initialCoMPosition = new Point3D();
-		humanoidFloatingRootJointRobot.computeCenterOfMass(initialCoMPosition);
-
-		Quaternion initialEstimationLinkOrientation = new Quaternion();
-		humanoidFloatingRootJointRobot.getRootJoint().getJointTransform3D().getRotation(initialEstimationLinkOrientation);
-
-		estimatorThread.initializeEstimatorToActual(initialCoMPosition, initialEstimationLinkOrientation);
-
-		DRCControllerThread controllerThread = new DRCControllerThread(robotModel, sensorInformation, controllerFactory, threadDataSynchronizer,
-				outputProcessor, dataProducer, robotVisualizer, gravity, robotModel.getEstimatorDT());
+		dataProducer = new HumanoidGlobalDataProducer(controllerPacketCommunicationServer);
 
 		/*
 		 * Setup threads
 		 */
+		ThreadDataSynchronizer threadDataSynchronizer = new ThreadDataSynchronizer(robotModel);
+		DRCEstimatorThread estimatorThread = createEstimatorThread(robotModel, threadDataSynchronizer);
+		DRCControllerThread controllerThread = createControllerThread(robotModel, threadDataSynchronizer);
+
 		GazeboThreadedRobotController robotController = new GazeboThreadedRobotController(humanoidFloatingRootJointRobot);
 		int estimatorTicksPerSimulationTick = (int) Math.round(robotModel.getEstimatorDT() / robotModel.getEstimatorDT());
 		int controllerTicksPerSimulationTick = (int) Math.round(robotModel.getControllerDT() / robotModel.getEstimatorDT());
 
 		robotController.addController(controllerThread, controllerTicksPerSimulationTick, true);
 		robotController.addController(estimatorThread, estimatorTicksPerSimulationTick, false);
-		
+
 		humanoidFloatingRootJointRobot.setController(robotController);
-		try
-		{
-			controllerPacketCommunicator.connect();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
 
+		createNetworkProcessor(robotModel, tfPrefix);
 
+		simulationThread = new Thread(robotController);
+
+		connectAll(robotModel);
+
+	}
+
+	private DRCEstimatorThread createEstimatorThread(GazeboAtlasRobotModel robotModel, ThreadDataSynchronizer threadDataSynchronizer)
+	{
+		AtlasSensorInformation sensorInformation =(AtlasSensorInformation) robotModel.getSensorInformation();
+		HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot = robotModel.getHumanoidFloatingRootJointRobot();
+
+		JointDesiredOutputWriter outputWriter = robotModel.getCustomSimulationOutputWriter(humanoidFloatingRootJointRobot);
+
+		StateEstimatorParameters stateEstimatorParameters = robotModel.getStateEstimatorParameters();
+		sensorReaderFactory = new GazeboSensorReaderFactory(sensorInformation, stateEstimatorParameters);
+
+		PelvisPoseCorrectionCommunicatorInterface externalPelvisPoseSubscriber = new PelvisPoseCorrectionCommunicator(dataProducer);
+		dataProducer.attachListener(StampedPosePacket.class, externalPelvisPoseSubscriber);
+
+		DRCEstimatorThread estimatorThread = new DRCEstimatorThread(sensorInformation, robotModel.getContactPointParameters(),robotModel,
+				robotModel.getStateEstimatorParameters(), sensorReaderFactory, threadDataSynchronizer, new PeriodicNonRealtimeThreadScheduler( "DRCSimGazeboYoVariableServer"), 
+				dataProducer, outputWriter , yoVariableServer, gravity);
+		estimatorThread.setExternalPelvisCorrectorSubscriber(externalPelvisPoseSubscriber);
+
+		return estimatorThread;
+
+	}
+
+	private DRCControllerThread createControllerThread(GazeboAtlasRobotModel robotModel, ThreadDataSynchronizer threadDataSynchronizer)
+	{
+		AtlasSensorInformation sensorInformation =(AtlasSensorInformation) robotModel.getSensorInformation();
+		HumanoidFloatingRootJointRobot humanoidFloatingRootJointRobot = robotModel.getHumanoidFloatingRootJointRobot();
+
+		DRCOutputProcessor outputProcessor = robotModel.getCustomSimulationOutputProcessor(humanoidFloatingRootJointRobot);
+
+		HighLevelHumanoidControllerFactory controllerFactory = createDRCControllerFactory(sensorInformation, robotModel, controllerPacketCommunicationServer);
+
+		DRCControllerThread controllerThread = new DRCControllerThread(robotModel, robotModel.getSensorInformation(), controllerFactory, 
+				threadDataSynchronizer, outputProcessor, 
+				dataProducer, yoVariableServer, gravity, robotModel.getEstimatorDT());
+
+		return controllerThread;
+
+	}
+
+	private void connectAll(GazeboAtlasRobotModel robotModel)  throws IOException
+	{
+		controllerPacketCommunicationServer.connect();
+		yoVariableServer.start();
+		robotModel.connectOutputProcessor();
+		sensorReaderFactory.connectSensorReader();
+		simulationThread.start();
+	}
+
+	public void disconnect() {
+		controllerPacketCommunicationServer.disconnect();
+		rosCommunicationServer.disconnect();
+		yoVariableServer.close();
+
+	}
+	private void createNetworkProcessor(AtlasRobotModel robotModel, String tfPrefix) throws IOException
+	{
 		DRCNetworkModuleParameters networkModuleParams = new DRCNetworkModuleParameters();
 		URI rosURI = NetworkParameters.getROSURI();
 		networkModuleParams.setRosUri(rosURI);
@@ -175,79 +180,24 @@ public class GazeboControllerFactory
 		networkModuleParams.enableROSAPICommunicator(true);
 		networkModuleParams.enableLocalControllerCommunicator(true);
 		networkModuleParams.enableControllerCommunicator(true);
-		networkModuleParams.enableBehaviorModule(true);
-		networkModuleParams.enableBehaviorVisualizer(true);
 
 		DRCNetworkProcessor networkProcessor = new DRCNetworkProcessor(robotModel, networkModuleParams);
 
-		PacketCommunicator rosCommunicator = PacketCommunicator.createIntraprocessPacketCommunicator(NetworkPorts.ROS_API_COMMUNICATOR, new IHMCCommunicationKryoNetClassList());
+		new UiPacketToRosMsgRedirector(robotModel, rosURI, rosCommunicationServer, networkProcessor.getPacketRouter(), defaultRosNameSpace);
 
-		new UiPacketToRosMsgRedirector(robotModel, rosURI, rosCommunicator, networkProcessor.getPacketRouter(), defaultRosNameSpace);
-
-
-		RosMainNode rosMainNode = new RosMainNode(rosURI, nameSpace + nodeName);
-		RosAtlasAuxiliaryRobotDataPublisher auxiliaryRobotDataPublisher = new RosAtlasAuxiliaryRobotDataPublisher(rosMainNode, nameSpace);
+		RosMainNode rosMainNode = new RosMainNode(rosURI, defaultRosNameSpace + nodeName);
+		RosAtlasAuxiliaryRobotDataPublisher auxiliaryRobotDataPublisher = new RosAtlasAuxiliaryRobotDataPublisher(rosMainNode, defaultRosNameSpace);
 		rosMainNode.execute();
 
-		rosCommunicator.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
-		
-		new ThePeoplesGloriousNetworkProcessor(rosURI, rosCommunicator, robotModel, defaultRosNameSpace, tfPrefix);
+		rosCommunicationServer.attachListener(RobotConfigurationData.class, auxiliaryRobotDataPublisher);
 
-		yoVariableServer.start();
-
-		robotModel.connectOutputProcessor();
-
-		sensorReaderFactory.getSensorReader().connect();
-
-		Thread simulationThread = new Thread(robotController);
-		simulationThread.start();
-
-
-		try
-		{
-			simulationThread.join();
-		}
-		catch (InterruptedException e)
-		{
-			e.printStackTrace();
-		}
+		/*
+		 * ThePeoplesGloriousNetworkProcessor connects rosCommunicator. So it is not required to connect it outside.
+		 * namespace parameter in this constructor takes the namespace+robotName
+		 */
+		new ThePeoplesGloriousNetworkProcessor(rosURI, rosCommunicationServer, robotModel, defaultRosNameSpace, tfPrefix);
 
 	}
-
-	//   private MomentumBasedControllerFactory createDRCControllerFactory(DRCRobotModel robotModel, HumanoidGlobalDataProducer dataProducer)
-	//   {
-	//      ContactableBodiesFactory contactableBodiesFactory = robotModel.getContactPointParameters().getContactableBodiesFactory();
-	//
-	//      ArmControllerParameters armControllerParameters = robotModel.getArmControllerParameters();
-	//      WalkingControllerParameters walkingControllerParameters = robotModel.getWalkingControllerParameters();
-	//      final HighLevelState initialBehavior;
-	//      CapturePointPlannerParameters capturePointPlannerParameters = robotModel.getCapturePointPlannerParameters();
-	//      initialBehavior = HighLevelState.WALKING; // HERE!!
-	//
-	//      FootstepTimingParameters footstepTimingParameters = FootstepTimingParameters.createForSlowWalkingOnRobot(walkingControllerParameters);
-	//      SideDependentList<String> feetContactSensorNames = sensorInformation.getFeetContactSensorNames();
-	//      SideDependentList<String> feetForceSensorNames = sensorInformation.getFeetForceSensorNames();
-	//      SideDependentList<String> wristForceSensorNames = sensorInformation.getWristForceSensorNames();
-	//
-	//      MomentumBasedControllerFactory controllerFactory = new MomentumBasedControllerFactory(contactableBodiesFactory, feetForceSensorNames,
-	//            feetContactSensorNames, wristForceSensorNames, walkingControllerParameters, armControllerParameters, capturePointPlannerParameters, initialBehavior);
-	//
-	////      controllerFactory.addHighLevelBehaviorFactory(new JointPositionControllerFactory(true));
-	//
-	//      if (USE_GUI)
-	//      {
-	//         VariousWalkingProviderFactory variousWalkingProviderFactory = new DataProducerVariousWalkingProviderFactory(dataProducer, footstepTimingParameters, new PeriodicNonRealtimeThreadScheduler("CapturabilityBasedStatusProducer"));
-	//         controllerFactory.setVariousWalkingProviderFactory(variousWalkingProviderFactory);
-	//
-	//      }
-	//      else
-	//      {
-	//         VariousWalkingProviderFactory variousWalkingProviderFactory = new ComponentBasedVariousWalkingProviderFactory(true, null, robotModel.getControllerDT());
-	//         controllerFactory.setVariousWalkingProviderFactory(variousWalkingProviderFactory);
-	//      }
-	//
-	//      return controllerFactory;
-	//   }
 
 
 	private static HighLevelHumanoidControllerFactory createDRCControllerFactory(AtlasSensorInformation sensorInformation, DRCRobotModel robotModel, PacketCommunicator packetCommunicator)
@@ -281,20 +231,21 @@ public class GazeboControllerFactory
 		return controllerFactory;
 	}
 
-	public static void main(String args[]) throws JSAPException, IOException
+	public static void main(String args[]) throws IOException
 	{
+
+		GazeboAtlasRobotModel model = new GazeboAtlasRobotModel(AtlasRobotVersion.ATLAS_UNPLUGGED_V5_NO_HANDS);
+		GazeboControllerFactory controller = new GazeboControllerFactory(model, "ihmc_ros", "atlas", null);
 		try
 		{
-			GazeboAtlasRobotModel model = new GazeboAtlasRobotModel(AtlasRobotVersion.ATLAS_UNPLUGGED_V5_NO_HANDS);
-			new GazeboControllerFactory(model, "ihmc_ros", "atlas", null);
+			controller.getSimulationThread().join();
 		}
-		catch (IllegalArgumentException e)
+		catch (InterruptedException e)
 		{
 			e.printStackTrace();
-
-		} catch (URISyntaxException e) 
-		{
-			e.printStackTrace();
+		}
+		finally {
+			controller.disconnect();
 		}
 
 
