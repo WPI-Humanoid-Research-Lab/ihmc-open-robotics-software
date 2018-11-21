@@ -43,7 +43,7 @@ public class UiPacketToRosMsgRedirector implements GlobalPacketConsumer
       packetRouter.setPacketRedirects(PacketDestination.CONTROLLER, PacketDestination.ROS_API);
       setupMsgTopics(rosAPI_communicator);
       rosMainNode.execute();
-//      rosAPI_communicator.attachGlobalListener(this);
+      rosAPI_communicator.attachGlobalListener(this);
    }
 
    @Override

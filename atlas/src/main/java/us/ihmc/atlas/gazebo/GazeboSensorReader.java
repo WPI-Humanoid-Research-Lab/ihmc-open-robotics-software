@@ -53,7 +53,7 @@ public class GazeboSensorReader implements SensorReader
    private final SensorProcessing sensorProcessing;
    private final List<OneDoFJoint> jointList;
    private final ArrayList<ForceSensorDefinition> forceSensorDefinitions;
-
+   private boolean isConnected = false;
    /*
     * Gazebo reports IMU orientations as relative values to their starting value as defined
     * in the model's tree, so we need to store this initial rotation to tack on to all reported rotations.
@@ -110,7 +110,6 @@ public class GazeboSensorReader implements SensorReader
 
    public void connect()
    {
-      boolean isConnected = false;
       System.out.println("[GazeboSensorReader] Connecting to " + address);
       
       while(!isConnected)
@@ -146,7 +145,11 @@ public class GazeboSensorReader implements SensorReader
       System.out.println("[GazeboSensorReader] Connected");
    }
    
-   @Override
+   public boolean isConnected() {
+	return isConnected;
+}
+
+@Override
    public void read()
    {
       try

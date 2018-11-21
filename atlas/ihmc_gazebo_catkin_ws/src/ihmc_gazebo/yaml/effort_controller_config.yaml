@@ -9,12 +9,12 @@ atlas:
     joint: back_bkx
     pid: {p: 4000.0, i: 5.0, d: 15.0, imax: 50.0, imin: -50.0, cmdMax: 300.0, cmdMin: -300.0}
   back_bky_effort_controller:
-    initial_angle: 0.1
+    initial_angle: 0.0
     type: effort_controllers/joint_effort_controller
     joint: back_bky
     pid: {p: 4000.0, i: 5.0, d: 15.0, imax: 50.0, imin: -50.0, cmdMax: 300.0, cmdMin: -300.0}
   back_bkz_effort_controller:
-    initial_angle: 0.5
+    initial_angle: 0.0
     type: effort_controllers/joint_effort_controller
     joint: back_bkz
     pid: {p: 4000.0, i: 5.0, d: 15.0, imax: 50.0, imin: -50.0, cmdMax: 300.0, cmdMin: -300.0}
