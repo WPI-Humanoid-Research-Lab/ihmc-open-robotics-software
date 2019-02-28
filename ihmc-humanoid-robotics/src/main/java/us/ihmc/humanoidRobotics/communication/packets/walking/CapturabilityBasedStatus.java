@@ -5,6 +5,7 @@ import java.util.Random;
 
 import us.ihmc.communication.packets.SettablePacket;
 import us.ihmc.euclid.referenceFrame.FramePoint2D;
+import us.ihmc.euclid.referenceFrame.FramePoint3D;
 import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 import us.ihmc.euclid.tuple2D.Point2D;
 import us.ihmc.euclid.tuple3D.Point3D;
@@ -61,6 +62,7 @@ public class CapturabilityBasedStatus extends SettablePacket<CapturabilityBasedS
    {
       capturePoint.set(other.capturePoint);
       desiredCapturePoint.set(other.desiredCapturePoint);
+      centerOfMass.set(other.centerOfMass);
       leftFootSupportPolygonLength = other.leftFootSupportPolygonLength;
       rightFootSupportPolygonLength = other.rightFootSupportPolygonLength;
       for (int i = 0; i < MAXIMUM_NUMBER_OF_VERTICES; i++)
@@ -111,6 +113,11 @@ public class CapturabilityBasedStatus extends SettablePacket<CapturabilityBasedS
       return new FramePoint2D(ReferenceFrame.getWorldFrame(), desiredCapturePoint);
    }
 
+   public FramePoint3D getCenterOfMass()
+   {
+	   return new FramePoint3D(ReferenceFrame.getWorldFrame(), centerOfMass);
+   }
+   
    public FrameConvexPolygon2d getFootSupportPolygon(RobotSide robotSide)
    {
       if (robotSide == RobotSide.LEFT && leftFootSupportPolygonLength != 0)

@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import us.ihmc.communication.net.PacketConsumer;
 import us.ihmc.euclid.referenceFrame.FramePoint2D;
+import us.ihmc.euclid.referenceFrame.FramePoint3D;
 import us.ihmc.humanoidRobotics.communication.packets.walking.CapturabilityBasedStatus;
 import us.ihmc.robotics.geometry.FrameConvexPolygon2d;
 import us.ihmc.robotics.robotSide.RobotSide;
@@ -14,6 +15,7 @@ public class CapturabilityBasedStatusSubscriber implements PacketConsumer<Captur
 {
    private final AtomicReference<FramePoint2D> capturePointReference = new AtomicReference<FramePoint2D>(null);
    private final AtomicReference<FramePoint2D> desiredCapturePointReference = new AtomicReference<FramePoint2D>(null);
+   private final AtomicReference<FramePoint3D> centerOfMassReference = new AtomicReference<FramePoint3D>(null);
    private final SideDependentList<AtomicReference<FrameConvexPolygon2d>> footSupportPolygonReferences = new SideDependentList<>();
    private final AtomicReference<Boolean> doubleSupportReference = new AtomicReference<Boolean>(null);
 
@@ -40,6 +42,11 @@ public class CapturabilityBasedStatusSubscriber implements PacketConsumer<Captur
       return desiredCapturePointReference.getAndSet(null);
    }
 
+   public FramePoint3D getCenterOfMass()
+   {
+      return centerOfMassReference.getAndSet(null);
+   }
+
    public FrameConvexPolygon2d getFootSupportPolygon(RobotSide robotSide)
    {
       return footSupportPolygonReferences.get(robotSide).getAndSet(null);
@@ -58,6 +65,7 @@ public class CapturabilityBasedStatusSubscriber implements PacketConsumer<Captur
 
       capturePointReference.set(object.getCapturePoint());
       desiredCapturePointReference.set(object.getDesiredCapturePoint());
+      centerOfMassReference.set(object.getCenterOfMass());
       for (RobotSide robotSide : RobotSide.values)
          footSupportPolygonReferences.get(robotSide).set(object.getFootSupportPolygon(robotSide));
       doubleSupportReference.set(object.isInDoubleSupport());
