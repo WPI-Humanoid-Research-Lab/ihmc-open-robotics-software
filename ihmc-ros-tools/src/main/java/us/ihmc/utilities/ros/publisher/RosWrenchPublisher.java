@@ -4,15 +4,22 @@ import org.ros.message.Time;
 
 import geometry_msgs.Vector3;
 import std_msgs.Header;
+import us.ihmc.euclid.referenceFrame.ReferenceFrame;
 
 
 public class RosWrenchPublisher extends RosTopicPublisher<geometry_msgs.WrenchStamped>
 {
    int counter = 0;
-   
+   String frame = "";
    public RosWrenchPublisher(boolean latched)
    {
       super(geometry_msgs.WrenchStamped._TYPE,latched);
+   }
+
+   public RosWrenchPublisher(boolean latched, String rigidBodyName)
+   {
+	   super(geometry_msgs.WrenchStamped._TYPE,latched);
+	   this.frame = rigidBodyName;
    }
 
    public void publish(long timeStamp, float[] footSensorWrench)
@@ -31,6 +38,7 @@ public class RosWrenchPublisher extends RosTopicPublisher<geometry_msgs.WrenchSt
       Header header = newMessageFromType(Header._TYPE);
       header.setStamp(Time.fromNano(timeStamp));
       header.setSeq(counter);
+      header.setFrameId(frame);
       counter++;
       
       stampedWrench.setHeader(header);

@@ -54,8 +54,6 @@ public class RosSCSCameraPublisher implements ObjectConsumer<LocalVideoPacket>
    {
       if (rosMainNode.isStarted())
       {
-         //XXX: SENSOR ID DOES NOT EXIST! THIS IS SOOOOOO WRONG
-//         int sensorId = 0;
          for(int sensorId = 0 ; sensorId < nSensors; sensorId++) 
          {
         	 long timestamp = ppsTimestampOffsetProvider.adjustRobotTimeStampToRosClock(object.getTimeStamp());

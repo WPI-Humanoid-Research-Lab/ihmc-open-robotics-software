@@ -105,13 +105,13 @@ public class RosRobotConfigurationDataPublisher implements PacketConsumer<RobotC
 
       for(RobotSide robotSide : RobotSide.values())
       {
-         footForceSensorPublishers.put(robotSide, new RosWrenchPublisher(latched));
-         feetForceSensorIndexes.put(robotSide, getForceSensorIndex(feetForceSensorNames.get(robotSide), forceSensorDefinitions));
-         if(handForceSensorNames != null && !handForceSensorNames.isEmpty())
-         {
-            handForceSensorIndexes.put(robotSide, getForceSensorIndex(handForceSensorNames.get(robotSide), forceSensorDefinitions));
-            wristForceSensorPublishers.put(robotSide, new RosWrenchPublisher(latched));
-         }
+    	  feetForceSensorIndexes.put(robotSide, getForceSensorIndex(feetForceSensorNames.get(robotSide), forceSensorDefinitions));
+    	  footForceSensorPublishers.put(robotSide, new RosWrenchPublisher(latched, forceSensorDefinitions[feetForceSensorIndexes.get(robotSide)].getRigidBody().getName()));
+    	  if(handForceSensorNames != null && !handForceSensorNames.isEmpty())
+    	  {
+    		  handForceSensorIndexes.put(robotSide, getForceSensorIndex(handForceSensorNames.get(robotSide), forceSensorDefinitions));
+    		  wristForceSensorPublishers.put(robotSide, new RosWrenchPublisher(latched, forceSensorDefinitions[handForceSensorIndexes.get(robotSide)].getRigidBody().getName()));
+    	  }
       }
 
       OneDoFJoint[] joints = fullRobotModel.getControllableOneDoFJoints();
