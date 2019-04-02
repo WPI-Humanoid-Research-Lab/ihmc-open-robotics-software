@@ -97,8 +97,8 @@ public class AtlasRobotModel implements DRCRobotModel, SDFDescriptionMutator
    private static final double ATLAS_ONBOARD_SAMPLINGFREQ = 1000.0;
    public static final double ATLAS_ONBOARD_DT = 1.0 / ATLAS_ONBOARD_SAMPLINGFREQ;
 
-//   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = false; // IHMC robot is possibly running without batterymass
-   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = true;
+   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = false; // IHMC robot is possibly running without batterymass
+//   public static final boolean BATTERY_MASS_SIMULATOR_IN_ROBOT = true;
 
    private final JaxbSDFLoader loader;
 
