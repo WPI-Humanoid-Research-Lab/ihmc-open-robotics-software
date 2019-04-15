@@ -14,7 +14,7 @@ public class GazeboAtlasRobotModel extends AtlasRobotModel {
 	public GazeboAtlasRobotModel(AtlasRobotVersion atlasVersion) {
 		super(atlasVersion, RobotTarget.GAZEBO, true);
 		
-		gazeboOutputProcessor = new GazeboOutputWriter(this);
+		gazeboOutputProcessor = new GazeboOutputWriter(this, atlasVersion);
 		
 		humanoidFloatingRootJointRobot = createHumanoidFloatingRootJointRobot(true);
 		

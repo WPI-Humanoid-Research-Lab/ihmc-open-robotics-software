@@ -231,10 +231,21 @@ public class GazeboControllerFactory
 		return controllerFactory;
 	}
 
-	public static void main(String args[]) throws IOException
+	public static void main(String args[]) throws IOException, JSAPException
 	{
+		JSAP jsap = new JSAP();
 
-		GazeboAtlasRobotModel model = new GazeboAtlasRobotModel(AtlasRobotVersion.ATLAS_UNPLUGGED_V5_NO_HANDS);
+		FlaggedOption robotModel = new FlaggedOption("robotModel").setLongFlag("model").setShortFlag('m').setRequired(true).setStringParser(JSAP.STRING_PARSER);
+		robotModel.setHelp("Robot models: " + Arrays.toString(AtlasRobotModelFactory.getAvailableRobotModels()));
+		jsap.registerParameter(robotModel);
+		JSAPResult config = jsap.parse(args);
+		AtlasRobotVersion atlasModel;
+		if(!config.success())
+		{
+			atlasModel = AtlasRobotVersion.ATLAS_UNPLUGGED_V5_NO_HANDS;
+		}
+		atlasModel = AtlasRobotVersion.valueOf(config.getString("robotModel").toUpperCase().trim());
+		GazeboAtlasRobotModel model = new GazeboAtlasRobotModel(atlasModel);
 		GazeboControllerFactory controller = new GazeboControllerFactory(model, "ihmc_ros", "atlas", null);
 		try
 		{
