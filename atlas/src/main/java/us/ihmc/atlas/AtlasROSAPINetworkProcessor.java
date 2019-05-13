@@ -67,6 +67,8 @@ public class AtlasROSAPINetworkProcessor
          DRCNetworkModuleParameters networkProcessorParameters = new DRCNetworkModuleParameters();
          networkProcessorParameters.enableLocalControllerCommunicator(false);
          networkProcessorParameters.enableUiModule(true);
+         networkProcessorParameters.enableBehaviorModule(true);
+         networkProcessorParameters.enableBehaviorVisualizer(true);
          networkProcessorParameters.enableROSAPICommunicator(true);
          networkProcessorParameters.enableControllerCommunicator(true);
          
