@@ -177,6 +177,8 @@ public class GazeboControllerFactory
 		URI rosURI = NetworkParameters.getROSURI();
 		networkModuleParams.setRosUri(rosURI);
 		networkModuleParams.enableRosModule(true);
+		networkModuleParams.enableBehaviorModule(true);
+		networkModuleParams.enableBehaviorVisualizer(true);
 		networkModuleParams.enableROSAPICommunicator(true);
 		networkModuleParams.enableLocalControllerCommunicator(true);
 		networkModuleParams.enableControllerCommunicator(true);
