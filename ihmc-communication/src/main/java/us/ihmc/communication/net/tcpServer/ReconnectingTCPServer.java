@@ -16,6 +16,7 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
    {
       super(2097152);
       singleConnectionServer = new ServerSocket(port);
+      singleConnectionServer.setSoTimeout(5000);
 
    }
 
@@ -23,8 +24,9 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
    {
       synchronized (connectionStatusSync)
       {
-         if (getStatus() == Status.CONNECTED)
+//         if (getStatus() == Status.CONNECTED)
          {
+        	System.out.println("************\n"+getStatus().name()+"\n**************");
             try
             {
                inputStream.close();
@@ -38,6 +40,7 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
 
             setStatus(Status.DISCONNECTED);
             notifyDisconnectedListeners();
+            connect();
          }
       }
    }
@@ -54,6 +57,7 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
          try
          {
             socket = singleConnectionServer.accept();
+            System.out.println("************\n Accept called \n**************");
             socket.setTcpNoDelay(true);
             inputStream = new DataInputStream(socket.getInputStream());
             outputStream = socket.getOutputStream();
