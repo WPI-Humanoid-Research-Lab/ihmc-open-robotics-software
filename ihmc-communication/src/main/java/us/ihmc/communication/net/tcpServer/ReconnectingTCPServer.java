@@ -16,7 +16,7 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
    {
       super(2097152);
       singleConnectionServer = new ServerSocket(port);
-      singleConnectionServer.setSoTimeout(5000);
+//      singleConnectionServer.setSoTimeout(5000);
 
    }
 
@@ -26,7 +26,6 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
       {
 //         if (getStatus() == Status.CONNECTED)
          {
-        	System.out.println("************\n"+getStatus().name()+"\n**************");
             try
             {
                inputStream.close();
@@ -37,9 +36,16 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
             {
                e.printStackTrace();
             }
-
+            System.out.println("Client Disconnected");
             setStatus(Status.DISCONNECTED);
             notifyDisconnectedListeners();
+            System.out.println("Waiting for client connection");
+            try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             connect();
          }
       }
@@ -57,20 +63,23 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
          try
          {
             socket = singleConnectionServer.accept();
-            System.out.println("************\n Accept called \n**************");
             socket.setTcpNoDelay(true);
             inputStream = new DataInputStream(socket.getInputStream());
             outputStream = socket.getOutputStream();
             reset();
             setStatus(Status.CONNECTED);
             notifyConnectedListeners();
+            
          }
          catch (IOException e)
          {
             System.out.println("Connecting timed out: " + e.getMessage());
             ThreadTools.sleep(1000);
          }
+         System.out.println("************\n Connection Status:"+ getStatus()+ "\n**************");
       }
+      System.out.println("************\n Connected to a client \n**************");
+      
    }
 
    @Override
@@ -78,10 +87,24 @@ public class ReconnectingTCPServer extends ReconnectingTCPConnection
    {
       synchronized (connectionStatusSync)
       {
-         disconnect();
+    	  if (getStatus() == Status.CONNECTED)
+          {
+             try
+             {
+                inputStream.close();
+                outputStream.close();
+                socket.close();
+             }
+             catch (IOException e)
+             {
+                e.printStackTrace();
+             }
+             System.out.println("Client Disconnected");
+             setStatus(Status.DISCONNECTED);
+             notifyDisconnectedListeners();
+          }
          setStatus(Status.CLOSED);
       }
-
    }
 
 }
