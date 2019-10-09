@@ -51,6 +51,7 @@ repositories {
     mavenCentral()
     maven {
         url "https://bengal.ihmc.us/nexus/content/repositories/thirdparty/"
+	url  "https://github.com/rosjava/rosjava_mvn_repo/raw/master"
     }
 }
 
